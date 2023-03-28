@@ -20,26 +20,46 @@ func ByteCompare(b1, b2 []byte) bool {
 }
 
 
-func RetrieveDS(index string, contentPtr interface{}) error {
+func RawRetrieveDS(index string) ([]byte, error){
 	_uuid := GetUUID(index)
 	fmt.Printf("%v\n", _uuid)
 	stream, ok := userlib.DatastoreGet(_uuid)
 	if !ok {
-		panic("Error occurs in DataStore retrival")
+		err := errors.New("Error occurs when Datastore Retrieval")
+		return nil, err
 	}
-	newerr := json.Unmarshal(stream, contentPtr)
-	return newerr
+	return stream, nil
+	
 }
 
-func StoreDS(index string, content interface{}) error {
+func DecRetrieveDS(decKey interface{}, index string) ([]byte, error){
 	_uuid := GetUUID(index)
-	fmt.Printf("%v\n", _uuid)
-	contentBytes, err := json.Marshal(content)
-	if err != nil {
-		return err
+	stream, ok := userlib.DatastoreGet(_uuid)
+	if !ok {
+		return nil, errors.New("Error occurs when Datastore Retrieval")
 	}
-	userlib.DatastoreSet(_uuid, contentBytes)
-	return nil
+
+	if decKey == nil{
+		return stream, nil
+	}
+	
+	switch decKey.(type) {
+	case userlib.PKEDecKey:
+		_decKey, ok := decKey.(userlib.PKEDecKey)
+		if !ok {
+			return nil, errors.New("Error occurs when key type casting")
+		}
+		ptext, err := userlib.PKEDec(_decKey, stream)
+		return ptext, err
+	default:
+		ptext := userlib.SymDec(decKey.([]byte), stream)
+		return ptext, nil
+	}
+}
+
+func StoreDS(index string, content []byte){
+	_uuid := GetUUID(index)
+	userlib.DatastoreSet(_uuid, content)
 }
 
 func GetUUID(s string) uuid.UUID {
@@ -50,6 +70,39 @@ func GetUUID(s string) uuid.UUID {
 	}
 	return deterministicUUID
 }
+
+/*
+	Serialized-then-Enc
+	SymEnc cannot take any other type other than []byte as input
+	To other type, we first serialize it using json.Marshal()
+				   then invoke SymEnc() API
+*/
+
+func SerThenEnc(encKey interface{}, content interface{})[]byte{
+	stream, _ := json.Marshal(content)
+	if encKey == nil {
+		return stream
+	}
+
+	switch encKey.(type){
+		case userlib.PKEEncKey:
+			ctext, _ := userlib.PKEEnc(
+				encKey.(userlib.PKEEncKey), stream)
+			return ctext
+		default:
+			ctext := userlib.SymEnc(
+				encKey.([]byte),
+				userlib.RandomBytes(16),
+				stream)
+			return ctext
+	}
+}
+
+/*
+	Decrypt-then-Deserialize
+*/
+
+
 
 
 

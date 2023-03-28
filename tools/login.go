@@ -3,6 +3,7 @@ package tools
 import (
 	// "fmt"
 	"errors"
+	"encoding/json"
 	userlib "github.com/cs161-staff/project2-userlib"
 )
 
@@ -30,21 +31,49 @@ type User struct {
 	Salt []byte
 }
 
-func SignUp(username string, password string) error{
+/*
+	user slot structure in Datastore
+
+	/login: Not Encrypted
+	/SK: SymEnc Encrypted 
+*/
+
+func SignUp(username string, password string) (*User, error){
+
 	salt := userlib.RandomBytes(32)
 	passwordHash := userlib.Hash([]byte(username + password))
+
+	PK, SK, _ := userlib.PKEKeyGen()
+	userlib.KeystoreSet(username, PK)
+
 	loginSlot := LoginSlot {
 		PasswordHash: passwordHash,
 		Salt: salt,
 	}
-	StoreDS(username + "/login", loginSlot)
-	return nil
+
+	ptr := &User {
+		Username: username,
+		Password: password,
+		Salt: salt,
+	}
+
+	encKeySK, _ := ptr.GetKey("ENC-SK")
+
+	StoreDS(username + "/SK", SerThenEnc(encKeySK, SK))
+
+	stream, _:= json.Marshal(loginSlot)
+	StoreDS(username + "/login", stream)
+	return ptr, nil
 }
 
 
 func LoginCheck(username string, password string) (*User, error) {
 	var loginSlot LoginSlot
-	RetrieveDS(username + "/login", &loginSlot)
+	stream, err := DecRetrieveDS(nil, username + "/login")
+	if err != nil{
+		return nil, err
+	}
+	err = json.Unmarshal(stream, &loginSlot)
 
 	hash := userlib.Hash([]byte(username + password))
 	if (ByteCompare(loginSlot.PasswordHash, hash)){
@@ -56,7 +85,7 @@ func LoginCheck(username string, password string) (*User, error) {
 		return userdataptr, nil
 	}
 
-	err := errors.New("Incorrect username or password")
+	err = errors.New("Incorrect username or password")
 	return nil, err
 }
 

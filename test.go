@@ -17,10 +17,15 @@ func main(){
 	}
 	fmt.Printf("name: %s\npwd: %s\n", ptr.Username, ptr.Password)
 
-	key, _ := ptr.GetKey("ENC-text.txt-0")
-	fmt.Printf("%v\n", key[:5])
+	filename := "test.txt"
+	content := []byte("hello world\n")
 
-	key2, _ := ptr.GetKey("ENC-text.txt-0")
-	fmt.Printf("%v\n", key2[:5])
-
+	ptr.StoreFile(filename, content)
+	
+	appendContent := []byte("another one\n")
+	ptr.AppendtoFile(filename,appendContent )
+	
+	res, _ := ptr.LoadFile(filename)
+	
+	fmt.Printf("%v", string(res))
 }
