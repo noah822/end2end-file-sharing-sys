@@ -1,6 +1,8 @@
 package tools
 
 import (
+	// "fmt"
+	"errors"
 	userlib "github.com/cs161-staff/project2-userlib"
 )
 
@@ -54,7 +56,8 @@ func LoginCheck(username string, password string) (*User, error) {
 		return userdataptr, nil
 	}
 
-	return nil, nil
+	err := errors.New("Incorrect username or password")
+	return nil, err
 }
 
 

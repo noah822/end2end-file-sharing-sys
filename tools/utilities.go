@@ -19,6 +19,7 @@ func ByteCompare(b1, b2 []byte) bool {
 	return true
 }
 
+
 func RetrieveDS(index string, contentPtr interface{}) error {
 	_uuid := GetUUID(index)
 	fmt.Printf("%v\n", _uuid)
