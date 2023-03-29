@@ -42,27 +42,87 @@ func (userdataptr *User)CreateFile(filename string, size int) *File {
 		FBC: 1,
 	} 
 
-	metaEncKey, _ := ptr.GetKey(
-		fmt.Sprintf("ENC-%s-Meta", filename), 
-	)
+	/*
+		Assign file control block
+		encryption and mac key
+	*/
+	metaEncKey, metaMacKey, _ := ptr.__initMenuKey(filename)
 	
-	StoreDS(
+	GuardedStoreDS(
+		metaEncKey, metaMacKey,
 		fmt.Sprintf("%s/%s/Meta", ptr.Username, filename),
-		SerThenEnc(metaEncKey, handler),
+		handler,
 	)
 	return &handler
 }
+
+
+func (userdataptr* User) __initMenuKey(filename string) ([]byte, []byte, error){
+	ptr := userdataptr
+	menuEncKey, _ := ptr.GetKey("ENC-Menu")
+	menuMacKey, _ := ptr.GetKey("MAC-Menu")
+
+	stream, err := GuardedRetrieveDS(
+		menuEncKey, menuMacKey,
+		ptr.Username + "/Menu",
+	)
+
+	var _menu SharedKeyMenu
+	json.Unmarshal(stream, &_menu)
+
+
+	if err != nil{
+		panic("Menu has been tampered with!")
+	}
+
+	metaEncKey := userlib.RandomBytes(16)
+	metaMacKey := userlib.RandomBytes(16)
+
+	_menu.Menu[filename] = metaEncKey
+	_menu.Menu[filename + "/MAC"] = metaMacKey
+
+	ptr.EncMacStoreDS("Menu", _menu)
+
+	return metaEncKey, metaMacKey, nil
+}
+
+func (userdataptr *User) __getMenuKey(filename string) ([]byte, []byte, error){
+	ptr := userdataptr
+	menuEncKey, _ := ptr.GetKey("ENC-Menu")
+	menuMacKey, _ := ptr.GetKey("MAC-Menu")
+
+	stream, err := GuardedRetrieveDS(
+		menuEncKey, menuMacKey,
+		ptr.Username + "/Menu",
+	)
+
+	if err != nil{
+		panic("Menu has been tampered with!")
+	}
+	
+	var _menu SharedKeyMenu
+	json.Unmarshal(stream, &_menu)
+
+	metaEncKey := _menu.Menu[filename]
+	metaMacKey := _menu.Menu[filename + "/MAC"]
+
+	return metaEncKey, metaMacKey, nil
+}
+
+
 
 func (userdataptr* User) OpenFile(filename string) *File{
 	ptr := userdataptr
 
 	index := fmt.Sprintf("%s/%s/Meta", ptr.Username, filename)
-	metaEncKey, _ := ptr.GetKey(
-		fmt.Sprintf("ENC-%s-Meta", filename), 
-	)
+
+	metaEncKey, metaMacKey, _ := ptr.__getMenuKey(filename)
 
 	var handler File
-	stream, _ := DecRetrieveDS(metaEncKey, index)
+	stream, err := GuardedRetrieveDS(metaEncKey, metaMacKey, index)
+	if err != nil{
+		log.Fatal(err)
+	}
 	json.Unmarshal(stream, &handler)
 
 	return &handler
@@ -130,13 +190,8 @@ func (handler *File) Load() ([]byte, error){
 func (userdataptr* User) FileMetaUpdate(filename string, updatedMeta *File) error{
 	ptr := userdataptr
 	index := fmt.Sprintf("%s/%s/Meta", ptr.Username, filename)
-	metaEncKey, _ := ptr.GetKey(
-		fmt.Sprintf("ENC-%s-Meta", filename),
-	)
-	StoreDS(
-		index,
-		SerThenEnc(metaEncKey, *updatedMeta),
-	)
+	metaEncKey, metaMacKey, _ := ptr.__getMenuKey(filename)
+	GuardedStoreDS(metaEncKey, metaMacKey, index, *updatedMeta)
 	return nil
 }
 

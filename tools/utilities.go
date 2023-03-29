@@ -93,6 +93,15 @@ func StoreDS(index string, content []byte){
 	userlib.DatastoreSet(_uuid, content)
 }
 
+func GuardedStoreDS(encKey []byte, macKey []byte, index string, content interface {}){
+
+	stream  := SerThenEnc(encKey, content)
+	hmac, _ := userlib.HMACEval(macKey, stream)
+
+	StoreDS(index, stream)
+	StoreDS(index+"/MAC", hmac)
+}
+
 func (userdataptr *User) EncMacStoreDS(itemname string, item interface{}){
 	ptr := userdataptr
 	encKey, _ := ptr.GetKey("ENC-" + itemname)

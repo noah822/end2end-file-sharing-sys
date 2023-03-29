@@ -49,12 +49,7 @@ import (
 */
 
 type SharedKeyMenu struct {
-	Menu map[string]EncMacPair
-}
-
-type EncMacPair struct {
-	encKey []byte
-	macKey []byte
+	Menu map[string] []byte
 }
 
 
