@@ -24,7 +24,9 @@ func main(){
 	
 	appendContent := []byte("another one\n")
 	ptr.AppendtoFile(filename,appendContent )
-	
+	ptr.AppendtoFile(filename,appendContent )
+	ptr.AppendtoFile(filename,appendContent )
+
 	res, _ := ptr.LoadFile(filename)
 	
 	fmt.Printf("%v", string(res))

@@ -20,7 +20,7 @@ func ByteCompare(b1, b2 []byte) bool {
 }
 
 
-func RawRetrieveDS(index string) ([]byte, error){
+func RetrieveDS(index string) ([]byte, error){
 	_uuid := GetUUID(index)
 	fmt.Printf("%v\n", _uuid)
 	stream, ok := userlib.DatastoreGet(_uuid)
@@ -57,10 +57,80 @@ func DecRetrieveDS(decKey interface{}, index string) ([]byte, error){
 	}
 }
 
+/*
+	index is under the namespace the user specified
+*/
+
+func GuardedRetrieveDS(decKey []byte, macKey []byte, index string) ([]byte, error){
+	_uuid := GetUUID(index)
+	stream, ok := userlib.DatastoreGet(_uuid)
+	if !ok {
+		return nil, errors.New("Error occurs when Datastore Retrieval")
+	}
+	
+	_macUUID := GetUUID(index + "/MAC")
+	hmac, _ := userlib.DatastoreGet(_macUUID)
+
+	if !MacCheck(macKey, stream, hmac){
+		return nil, errors.New(
+			fmt.Sprintf("%s has been tempared with!", index),
+		)
+	}
+	ptext := userlib.SymDec(decKey, stream)
+	return ptext, nil
+}
+
+
+
+func MacCheck(key []byte, ctext []byte, hmac []byte)bool {
+	_hmac, _ := userlib.HMACEval(key, ctext)
+	ok := userlib.HMACEqual(hmac, _hmac)
+	return ok
+}
+
 func StoreDS(index string, content []byte){
 	_uuid := GetUUID(index)
 	userlib.DatastoreSet(_uuid, content)
 }
+
+func (userdataptr *User) EncMacStoreDS(itemname string, item interface{}){
+	ptr := userdataptr
+	encKey, _ := ptr.GetKey("ENC-" + itemname)
+	macKey, _ := ptr.GetKey("MAC-"+itemname)
+
+	stream  := SerThenEnc(encKey, item)
+	hmac, _ := userlib.HMACEval(macKey, stream)
+
+	StoreDS(
+		fmt.Sprintf("%s/%s", ptr.Username, itemname),
+		stream,
+	)
+
+	StoreDS(
+		fmt.Sprintf("%s/%s/MAC", ptr.Username, itemname),
+		hmac,
+	)
+}
+
+// func (handler *File) EncMacStoreDS(itemname string, item interface{}){
+// 	encKey, _ := handler.GetKey("ENC-" + itemname)
+// 	macKey, _ := handler.GetKey("MAC-"+itemname)
+
+// 	stream  := SerThenEnc(encKey, item)
+// 	hmac, _ := userlib.HMACEval(macKey, stream)
+
+// 	StoreDS(
+// 		fmt.Sprintf("%s/%s", ptr.Username, itemname),
+// 		stream,
+// 	)
+
+// 	StoreDS(
+// 		fmt.Sprintf("%s/%s/MAC", ptr.Username, itemname),
+// 		hmac,
+// 	)
+// }
+
+
 
 func GetUUID(s string) uuid.UUID {
 	hash := userlib.Hash([]byte(s))

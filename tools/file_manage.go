@@ -2,7 +2,7 @@ package tools
 
 import (
 	"fmt"
-	"errors"
+	// "errors"
 	"log"
 	"encoding/json"
 	userlib "github.com/cs161-staff/project2-userlib"
@@ -30,11 +30,6 @@ type File struct {
 	FBC int
 }
 
-type FileBlock struct {
-	Content []byte
-	Mac []byte
-}
-
 func (userdataptr *User)CreateFile(filename string, size int) *File {
 	ptr := userdataptr
 	handler := File{
@@ -50,6 +45,7 @@ func (userdataptr *User)CreateFile(filename string, size int) *File {
 	metaEncKey, _ := ptr.GetKey(
 		fmt.Sprintf("ENC-%s-Meta", filename), 
 	)
+	
 	StoreDS(
 		fmt.Sprintf("%s/%s/Meta", ptr.Username, filename),
 		SerThenEnc(metaEncKey, handler),
@@ -80,17 +76,16 @@ func (handler *File) Store(blockNum int, content []byte) error {
 		fmt.Sprintf("MAC-%v", blockNum),
 	)
 
-
 	// Enc-then-Mac
 	ctext   := userlib.SymEnc(fileEncKey, userlib.RandomBytes(16), content)
 	hmac, _ := userlib.HMACEval(fileMacKey, ctext)
-	fileBlock := FileBlock {
-		Content: ctext,
-		Mac: hmac,
-	}
 	StoreDS(
 		fmt.Sprintf("%s/%s/%v", handler.Username, handler.Filename, blockNum),
-		SerThenEnc(nil, fileBlock))
+		ctext)
+
+	StoreDS(
+		fmt.Sprintf("%s/%s/%v/MAC", handler.Username, handler.Filename, blockNum),
+		hmac)
 	
 	return nil
 }
@@ -106,19 +101,11 @@ func (handler *File) LoadBlock(blockNum int) ([]byte, error){
 
 	index := fmt.Sprintf("%s/%s/%v", handler.Username, handler.Filename, blockNum)
 
-	var block FileBlock
-	stream, _ := DecRetrieveDS(nil, index)
-	json.Unmarshal(stream, &block)
-
-	correctMac, _ := userlib.HMACEval(fileMacKey, block.Content)
-	if !userlib.HMACEqual(block.Mac, correctMac){
-		return nil, errors.New(
-			fmt.Sprintf("Invalid MAC value, file %s has been tampered!", handler.Filename),
-		)
-	}else{
-		content := userlib.SymDec(fileEncKey, block.Content)
-		return content, nil
+	content, err := GuardedRetrieveDS(fileEncKey, fileMacKey, index)
+	if err != nil{
+		return nil, err
 	}
+	return content, nil
 }
 
 
@@ -151,21 +138,6 @@ func (userdataptr* User) FileMetaUpdate(filename string, updatedMeta *File) erro
 		SerThenEnc(metaEncKey, *updatedMeta),
 	)
 	return nil
-}
-
-
-func (handler *File) Append(content []byte) error {
-	/*
-		Update file control block
-	*/
-	handler.FBC++
-	handler.Store(handler.FBC, content)
-
-	return nil
-	
-	/*
-		Create New File Block
-	*/
 }
 
 

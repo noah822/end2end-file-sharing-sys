@@ -40,7 +40,31 @@ import (
 	    ENC-SK
 	
 	...
+
+
+	Introduce shared key menu
+	map[string][]byte   <- indexed by filename
+	which stores key used for encrypting file control block
+							  and MAC Key
 */
+
+type SharedKeyMenu struct {
+	Menu map[string]EncMacPair
+}
+
+type EncMacPair struct {
+	encKey []byte
+	macKey []byte
+}
+
+
+
+
+
+// func (userdataptr *User) GetSharedKey(filename string) (EncMacPair, error){
+
+// }
+
 
 func (userdataptr *User) GetKey(purpose string) ([]byte, error){
 	ptr := userdataptr

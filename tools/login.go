@@ -51,17 +51,28 @@ func SignUp(username string, password string) (*User, error){
 		Salt: salt,
 	}
 
+	sharedKeyMenu := SharedKeyMenu {
+		Menu: make(map[string]EncMacPair),
+	}
+
 	ptr := &User {
 		Username: username,
 		Password: password,
 		Salt: salt,
 	}
 
-	encKeySK, _ := ptr.GetKey("ENC-SK")
+	// encKeySK, _ := ptr.GetKey("ENC-SK")
+	// macKeySK, _ := ptr.GetKey("MAC-SK")
 
-	StoreDS(username + "/SK", SerThenEnc(encKeySK, SK))
+	// stream := SerThenEnc(encKeySK, SK)
+	// hmac, _ := userlib.HMACEval(macKeySK, stream)
+	// StoreDS(username + "/SK", stream)
+	// StoreDS(username + "/SK/MAC", hmac)
 
-	stream, _:= json.Marshal(loginSlot)
+	ptr.EncMacStoreDS("SK", SK)
+	ptr.EncMacStoreDS("SharedKeyMenu", sharedKeyMenu)
+
+	stream, _ := json.Marshal(loginSlot)
 	StoreDS(username + "/login", stream)
 	return ptr, nil
 }
