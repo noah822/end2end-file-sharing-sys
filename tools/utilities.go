@@ -178,9 +178,35 @@ func SerThenEnc(encKey interface{}, content interface{})[]byte{
 }
 
 /*
-	Decrypt-then-Deserialize
+	Hybrid Encryption Scheme
 */
 
+type Packet struct {
+	SymKey []byte
+	Content []byte
+}
+
+
+func HybridEnc(PK userlib.PKEEncKey, content []byte)[]byte{
+	symKey := userlib.RandomBytes(16)
+	encryptedSymKey, _ := userlib.PKEEnc(PK, symKey)
+	ctext := userlib.SymEnc(symKey, userlib.RandomBytes(16), content)
+
+	stream, _ := json.Marshal(Packet{encryptedSymKey, ctext})
+	return stream
+}
+
+/*
+	Only return decrypted content
+*/
+
+func HybridDec(SK userlib.PKEDecKey, stream []byte)[]byte{
+	var packet Packet
+	json.Unmarshal(stream, &packet)
+	symKey, _ := userlib.PKEDec(SK, packet.SymKey)
+	ptext := userlib.SymDec(symKey, packet.Content)
+	return ptext
+} 
 
 
 

@@ -44,6 +44,8 @@ func SignUp(username string, password string) (*User, error){
 	passwordHash := userlib.Hash([]byte(username + password))
 
 	PK, SK, _ := userlib.PKEKeyGen()
+
+
 	userlib.KeystoreSet(username, PK)
 
 	loginSlot := LoginSlot {
@@ -63,6 +65,7 @@ func SignUp(username string, password string) (*User, error){
 
 
 	ptr.EncMacStoreDS("SK", SK)
+
 	ptr.EncMacStoreDS("Menu", sharedKeyMenu)
 
 	stream, _ := json.Marshal(loginSlot)

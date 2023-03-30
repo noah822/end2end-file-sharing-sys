@@ -9,8 +9,8 @@ import (
 )
 
 type SoftLink struct {
-	FileOwner string
-	FileName string
+	Owner string
+	Filename string
 } 
 
 type File struct {
@@ -109,7 +109,36 @@ func (userdataptr *User) __getMenuKey(filename string) ([]byte, []byte, error){
 	return metaEncKey, metaMacKey, nil
 }
 
+func (userdataptr *User) __setMenuKey(filename string, encKey []byte, macKey []byte) (error){
+	ptr := userdataptr
+	menuEncKey, _ := ptr.GetKey("ENC-Menu")
+	menuMacKey, _ := ptr.GetKey("MAC-Menu")
 
+	stream, err := GuardedRetrieveDS(
+		menuEncKey, menuMacKey,
+		ptr.Username + "/Menu",
+	)
+
+	if err != nil{
+		panic("Menu has been tampered with!")
+	}
+	
+	var _menu SharedKeyMenu
+	json.Unmarshal(stream, &_menu)
+
+	_menu.Menu[filename] = encKey
+	_menu.Menu[filename + "/MAC"] = macKey
+
+
+	ptr.EncMacStoreDS("Menu", _menu)
+
+	return nil
+}
+
+/*
+	Handle the case where File is actually a soft-linked version file
+
+*/
 
 func (userdataptr* User) OpenFile(filename string) *File{
 	ptr := userdataptr
@@ -125,7 +154,18 @@ func (userdataptr* User) OpenFile(filename string) *File{
 	}
 	json.Unmarshal(stream, &handler)
 
-	return &handler
+	if !handler.Linked{
+		return &handler
+	}else{
+		index = fmt.Sprintf("%s/%s/Meta", handler.Link.Owner, handler.Link.Filename)
+		stream, err = GuardedRetrieveDS(metaEncKey, metaMacKey, index)
+		if err != nil{
+			log.Fatal(err)
+		}
+		json.Unmarshal(stream, &handler)
+		return &handler
+	}
+
 }
 
 func (handler *File) Store(blockNum int, content []byte) error {
@@ -189,7 +229,8 @@ func (handler *File) Load() ([]byte, error){
 
 func (userdataptr* User) FileMetaUpdate(filename string, updatedMeta *File) error{
 	ptr := userdataptr
-	index := fmt.Sprintf("%s/%s/Meta", ptr.Username, filename)
+	handler := ptr.OpenFile(filename)
+	index := fmt.Sprintf("%s/%s/Meta", handler.Username, handler.Filename)
 	metaEncKey, metaMacKey, _ := ptr.__getMenuKey(filename)
 	GuardedStoreDS(metaEncKey, metaMacKey, index, *updatedMeta)
 	return nil

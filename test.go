@@ -2,32 +2,43 @@ package main
 
 import (
 	"fmt"
-	"log"
+	// "log"
 	"github.com/cs161-staff/project2-starter-code/tools"
 )
 
 func main(){
-	username := "Alice"
-	password := "password"
-	tools.SignUp(username, password)
+	user1 := "Alice"
+	pwd1 := "password"
+	tools.SignUp(user1, pwd1)
+	ptr1, _ := tools.LoginCheck(user1, "password")
+	// if err != nil{
+	// 	log.Fatal(err)
+	// }
+	fmt.Printf("name: %s\npwd: %s\n", ptr1.Username, ptr1.Password)
 
-	ptr, err := tools.LoginCheck(username, "password")
-	if err != nil{
-		log.Fatal(err)
-	}
-	fmt.Printf("name: %s\npwd: %s\n", ptr.Username, ptr.Password)
+	user2 := "Bob"
+	pwd2 := "password"
+	tools.SignUp(user2, pwd2)
+	ptr2, _ := tools.LoginCheck(user2, "password")
+	// if err != nil{
+	// 	log.Fatal(err)
+	// }
+	fmt.Printf("name: %s\npwd: %s\n", ptr2.Username, ptr2.Password)
 
-	filename := "test.txt"
+	A := "test.txt"
 	content := []byte("hello world\n")
 
-	ptr.StoreFile(filename, content)
-	
-	appendContent := []byte("another one\n")
-	ptr.AppendtoFile(filename,appendContent )
-	ptr.AppendtoFile(filename,appendContent )
-	ptr.AppendtoFile(filename,appendContent )
+	ptr1.StoreFile(A, content)
+	inviteptr, _ := ptr1.CreateInvitation(A, "Bob")
+	ptr2.AcceptInvitation("Alice", inviteptr, "another.txt")
 
-	res, _ := ptr.LoadFile(filename)
+	ptr1.AppendtoFile(A, []byte("anotherone\n"))
+	ptr2.AppendtoFile("another.txt", []byte("another\n"))
+
+	content, _ = ptr2.LoadFile("another.txt")
+
+	fmt.Printf("%v", string(content))
+
+
 	
-	fmt.Printf("%v", string(res))
 }
