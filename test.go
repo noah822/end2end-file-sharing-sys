@@ -35,7 +35,8 @@ func main(){
 	ptr1.AppendtoFile(A, []byte("anotherone\n"))
 	ptr2.AppendtoFile("another.txt", []byte("another\n"))
 
-	content, _ = ptr2.LoadFile("another.txt")
+	content, _ = ptr1.LoadFile("test.txt")
+	// content, _ = ptr2.LoadFile("another.txt")
 
 	fmt.Printf("%v", string(content))
 

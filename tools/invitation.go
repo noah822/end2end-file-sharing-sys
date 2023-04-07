@@ -14,11 +14,13 @@ import (
 
 type Invitation struct{
 	Owner string
-	Recepient string
 	Filename string
+	Recepient string
 	MetaEncKey []byte
 	MetaMacKey []byte
 }
+
+
 /*
 	Procedure of creating invitation:
 		1. fetch metaEncKey and metaMacKey from $Username/Menu
@@ -33,7 +35,11 @@ type Invitation struct{
 
 func (userdataptr *User) CreateInvitation (filename string, recipientUsername string)(uuid.UUID, error){
 	ptr := userdataptr
-	handler := ptr.OpenFile(filename)
+
+	var metaEncKey []byte
+	var metaMacKey []byte
+
+	handler, metaEncKey, metaMacKey := ptr.OpenFile(filename)
 
 	var _ownername string
 	var _filename string
@@ -45,11 +51,11 @@ func (userdataptr *User) CreateInvitation (filename string, recipientUsername st
 		_filename = filename
 	}
 
-	metaEncKey, metaMacKey, _ := ptr.__getMenuKey(filename)
+	// metaEncKey, metaMacKey, _ := ptr.__getMenuKey(filename)
 	inv := Invitation{
 		Owner: _ownername,
-		Recepient: recipientUsername,
 		Filename: _filename,
+		Recepient: recipientUsername,
 		MetaEncKey: metaEncKey,
 		MetaMacKey: metaMacKey,
 	}
@@ -104,12 +110,15 @@ func (userdataptr *User) AcceptInvitation(senderUsername string, invitationPtr u
 	// using invitation index to create soft-linked file
 	handler := File{
 		Linked: true,
-		Link : SoftLink{inv.Owner, inv.Filename},
+		Link : SoftLink{inv.Owner, inv.Filename, inv.MetaEncKey, inv.MetaMacKey},
 	}
 
-	ptr.__setMenuKey(filename, inv.MetaEncKey, inv.MetaMacKey)
+
+	metaEncKey, metaMacKey, _ := ptr.__initMenuKey(filename)
+
+
 	GuardedStoreDS(
-		inv.MetaEncKey, inv.MetaMacKey,
+		metaEncKey, metaMacKey,
 		fmt.Sprintf("%s/%s/Meta", ptr.Username, filename),
 		handler,
 	)

@@ -11,6 +11,8 @@ import (
 type SoftLink struct {
 	Owner string
 	Filename string
+	MetaEncKey []byte
+	MetaMacKey []byte
 } 
 
 type File struct {
@@ -32,10 +34,14 @@ type File struct {
 
 func (userdataptr *User)CreateFile(filename string, size int) *File {
 	ptr := userdataptr
+	metaEncKey, metaMacKey, _ := ptr.__initMenuKey(filename)
+
+
 	handler := File{
 		Linked: false,
 		Username: ptr.Username,
 		Filename: filename,
+
 		GKey: userlib.RandomBytes(16),
 		AccessList: make(map[string]bool),
 		Size: size,
@@ -46,7 +52,6 @@ func (userdataptr *User)CreateFile(filename string, size int) *File {
 		Assign file control block
 		encryption and mac key
 	*/
-	metaEncKey, metaMacKey, _ := ptr.__initMenuKey(filename)
 	
 	GuardedStoreDS(
 		metaEncKey, metaMacKey,
@@ -140,7 +145,7 @@ func (userdataptr *User) __setMenuKey(filename string, encKey []byte, macKey []b
 
 */
 
-func (userdataptr* User) OpenFile(filename string) *File{
+func (userdataptr* User) OpenFile(filename string) (*File, []byte, []byte){
 	ptr := userdataptr
 
 	index := fmt.Sprintf("%s/%s/Meta", ptr.Username, filename)
@@ -155,15 +160,19 @@ func (userdataptr* User) OpenFile(filename string) *File{
 	json.Unmarshal(stream, &handler)
 
 	if !handler.Linked{
-		return &handler
+		return &handler, metaEncKey, metaMacKey
 	}else{
 		index = fmt.Sprintf("%s/%s/Meta", handler.Link.Owner, handler.Link.Filename)
-		stream, err = GuardedRetrieveDS(metaEncKey, metaMacKey, index)
+		metaEncKey = handler.Link.MetaEncKey
+		metaMacKey = handler.Link.MetaMacKey
+		stream, err = GuardedRetrieveDS(
+			handler.Link.MetaEncKey, handler.Link.MetaMacKey, index,
+		)
 		if err != nil{
 			log.Fatal(err)
 		}
 		json.Unmarshal(stream, &handler)
-		return &handler
+		return &handler, metaEncKey, metaMacKey
 	}
 
 }
@@ -229,9 +238,22 @@ func (handler *File) Load() ([]byte, error){
 
 func (userdataptr* User) FileMetaUpdate(filename string, updatedMeta *File) error{
 	ptr := userdataptr
-	handler := ptr.OpenFile(filename)
-	index := fmt.Sprintf("%s/%s/Meta", handler.Username, handler.Filename)
-	metaEncKey, metaMacKey, _ := ptr.__getMenuKey(filename)
+	var metaMacKey []byte
+	var metaEncKey []byte
+	var index string
+
+	handler, metaEncKey, metaMacKey := ptr.OpenFile(filename)
+
+
+
+	if !handler.Linked{
+		index = fmt.Sprintf("%s/%s/Meta", handler.Username, handler.Filename)
+		// metaEncKey, metaMacKey, _ = ptr.__getMenuKey(filename)
+	}else{
+			index = fmt.Sprintf("%s/%s/Meta", handler.Link.Owner, handler.Link.Filename)
+			metaEncKey = handler.Link.MetaEncKey
+			metaMacKey = handler.Link.MetaMacKey
+	}
 	GuardedStoreDS(metaEncKey, metaMacKey, index, *updatedMeta)
 	return nil
 }

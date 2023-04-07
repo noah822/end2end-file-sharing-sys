@@ -1,7 +1,7 @@
 package tools
 
 // import (
-	// "fmt"
+// 	"fmt"
 // 	"errors"
 // 	"encoding/json"
 // 	userlib "github.com/cs161-staff/project2-userlib"
@@ -17,15 +17,17 @@ func (userdataptr *User) StoreFile(filename string, content []byte) error{
 
 func (userdataptr *User) AppendtoFile(filename string, content []byte){
 	ptr := userdataptr
-	handler := ptr.OpenFile(filename)
+	handler, _, _ := ptr.OpenFile(filename)
+
 
 	handler.FBC++
 	handler.Size += len(content)
 
 	handler.Store(handler.FBC-1, content)
+
 	ptr.FileMetaUpdate(filename, handler)
 
-	handler = ptr.OpenFile(filename)
+	// handler = ptr.OpenFile(filename)
 }
 
 
@@ -33,6 +35,6 @@ func (userdataptr *User) AppendtoFile(filename string, content []byte){
 
 func (userdataptr *User) LoadFile(filename string) ([]byte, error){
 	ptr := userdataptr
-	handler := ptr.OpenFile(filename)
+	handler, _, _ := ptr.OpenFile(filename)
 	return handler.Load()
 }
