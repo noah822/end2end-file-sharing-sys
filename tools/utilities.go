@@ -80,6 +80,23 @@ func GuardedRetrieveDS(decKey []byte, macKey []byte, index string) ([]byte, erro
 	return ptext, nil
 }
 
+func GuardedRetrieveDSUUID(decKey []byte, macKey []byte, encUUID uuid.UUID, macUUID uuid.UUID) ([]byte, error){
+	stream, ok := userlib.DatastoreGet(encUUID)
+	if !ok {
+		return nil, errors.New("Error occurs when Datastore Retrieval")
+	}
+	
+	hmac, _ := userlib.DatastoreGet(macUUID)
+
+	if !MacCheck(macKey, stream, hmac){
+		return nil, errors.New(
+			fmt.Sprintf("file has been tampered with"),
+		)
+	}
+	ptext := userlib.SymDec(decKey, stream)
+	return ptext, nil
+}
+
 
 
 func MacCheck(key []byte, ctext []byte, hmac []byte)bool {
@@ -101,6 +118,17 @@ func GuardedStoreDS(encKey []byte, macKey []byte, index string, content interfac
 	StoreDS(index, stream)
 	StoreDS(index+"/MAC", hmac)
 }
+
+func GuardedStoreDSUUID(encKey []byte, macKey []byte, encUUID uuid.UUID, macUUID uuid.UUID, content interface {}){
+
+	stream  := SerThenEnc(encKey, content)
+	hmac, _ := userlib.HMACEval(macKey, stream)
+
+	userlib.DatastoreSet(encUUID, stream)
+	userlib.DatastoreSet(macUUID, hmac)
+}
+
+
 
 func (userdataptr *User) EncMacStoreDS(itemname string, item interface{}){
 	ptr := userdataptr

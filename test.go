@@ -21,22 +21,38 @@ func main(){
 	tools.SignUp(user2, pwd2)
 	ptr2, _ := tools.LoginCheck(user2, "password")
 	// if err != nil{
-	// 	log.Fatal(err)
-	// }
-	fmt.Printf("name: %s\npwd: %s\n", ptr2.Username, ptr2.Password)
+		// 	log.Fatal(err)
+		// }
+		fmt.Printf("name: %s\npwd: %s\n", ptr2.Username, ptr2.Password)
+
+	user3 := "Coco"
+	pwd3 := "password"
+	tools.SignUp(user3, pwd3)
+	ptr3, _ := tools.LoginCheck(user3, "password")
 
 	A := "test.txt"
 	content := []byte("hello world\n")
 
 	ptr1.StoreFile(A, content)
+
+	// A invite B
 	inviteptr, _ := ptr1.CreateInvitation(A, "Bob")
-	ptr2.AcceptInvitation("Alice", inviteptr, "another.txt")
+	ptr2.AcceptInvitation("Alice", inviteptr, "b.txt")
 
-	ptr1.AppendtoFile(A, []byte("anotherone\n"))
-	ptr2.AppendtoFile("another.txt", []byte("another\n"))
+	// A invite C
+	inviteptr, _ = ptr1.CreateInvitation(A, "Coco")
+	ptr3.AcceptInvitation("Alice", inviteptr, "c.txt")
+	
 
-	content, _ = ptr1.LoadFile("test.txt")
-	// content, _ = ptr2.LoadFile("another.txt")
+	// A revoke B
+	ptr1.RevokeAccess("test.txt", "Bob")
+	// test C
+
+	ptr3.AppendtoFile("c.txt", []byte("kobe\n"))
+
+	content, _ = ptr2.LoadFile("b.txt")
+
+
 
 	fmt.Printf("%v", string(content))
 
