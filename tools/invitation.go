@@ -2,7 +2,7 @@ package tools
 
 import (
 	"fmt"
-// 	"errors"
+	"errors"
 	// "log" 
 
 	"github.com/google/uuid"
@@ -70,17 +70,13 @@ func (userdataptr *User) CreateInvitation (filename string, recipientUsername st
 	stream, _ := json.Marshal(inv)
 
 	ctext := HybridEnc(recipientPK, stream)
+
 	/*
 		ctext, err := userlib.PKEEnc(recipientPK, stream)
 		PKEEnc does not support long plaintext
 
 		use hybrid encryption instead
 	*/
-
-
-	// if err != nil{
-	// 	log.Fatal(err)
-	// }
 
 
 	StoreDS(index, ctext)
@@ -158,7 +154,7 @@ func (userdataptr *User) AcceptInvitation(senderUsername string, invitationPtr u
 
 func (userdataptr *User) RevokeAccess(filename string, recipientUsername string)(err error){
 	ptr := userdataptr
-	handler, _, _ := ptr.OpenFile(filename)
+	handler, _, _, _ := ptr.OpenFile(filename)
 	newMetaEncKey, newMetaMacKey, _ := ptr.__initMenuKey(filename)
 
 	/*
@@ -178,9 +174,8 @@ func (userdataptr *User) RevokeAccess(filename string, recipientUsername string)
 	// Re-encrypt/mac file content
 	for i:=0; i<handler.FBC; i++{
 		blockContent, err := prevHandler.LoadBlock(i)
-		fmt.Printf("%v", string(blockContent))
 		if err != nil{
-			fmt.Printf("adfasdf\n")
+			return errors.New("File has been compromised!")
 		}
 		handler.Store(i, blockContent)
 	}

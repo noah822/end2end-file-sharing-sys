@@ -22,6 +22,7 @@ import (
 
 type LoginSlot struct {
 	PasswordHash []byte
+	Signature []byte
 	Salt []byte
 }
 
@@ -40,16 +41,26 @@ type User struct {
 
 func SignUp(username string, password string) (*User, error){
 
+	var err error
 	salt := userlib.RandomBytes(32)
 	passwordHash := userlib.Hash([]byte(username + password))
 
 	PK, SK, _ := userlib.PKEKeyGen()
+	SignKey, VerifyKey, _ := userlib.DSKeyGen();
 
 
-	userlib.KeystoreSet(username, PK)
+	// sign the hash using generated SK
+	signature, _ := userlib.DSSign(SignKey, passwordHash)
+
+	err = userlib.KeystoreSet(username+"/DS", VerifyKey)
+	err = userlib.KeystoreSet(username, PK)
+	if err != nil {
+		return nil, errors.New("Username already exists!")
+	}
 
 	loginSlot := LoginSlot {
 		PasswordHash: passwordHash,
+		Signature: signature,
 		Salt: salt,
 	}
 
@@ -65,6 +76,7 @@ func SignUp(username string, password string) (*User, error){
 
 
 	ptr.EncMacStoreDS("SK", SK)
+	ptr.EncMacStoreDS("DSSK", SignKey)
 
 	ptr.EncMacStoreDS("Menu", sharedKeyMenu)
 
@@ -76,11 +88,28 @@ func SignUp(username string, password string) (*User, error){
 
 func LoginCheck(username string, password string) (*User, error) {
 	var loginSlot LoginSlot
+	verifyKey, ok := userlib.KeystoreGet(username + "/DS")
+	if !ok {
+		return nil, errors.New("User %s has not registered!")
+	}
+
+
 	stream, err := DecRetrieveDS(nil, username + "/login")
 	if err != nil{
-		return nil, err
+		return nil, errors.New("User %s has not registered!")
 	}
 	err = json.Unmarshal(stream, &loginSlot)
+
+	// check signature
+	err = userlib.DSVerify(
+		verifyKey,
+		loginSlot.PasswordHash,
+		loginSlot.Signature,
+	)
+	if err != nil{
+		return nil, errors.New("DataStore is likely to be tampered")
+	}
+
 
 	hash := userlib.Hash([]byte(username + password))
 	if (ByteCompare(loginSlot.PasswordHash, hash)){
@@ -92,7 +121,7 @@ func LoginCheck(username string, password string) (*User, error) {
 		return userdataptr, nil
 	}
 
-	err = errors.New("Incorrect username or password")
+	err = errors.New("Incorrect password")
 	return nil, err
 }
 

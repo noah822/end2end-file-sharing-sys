@@ -50,7 +50,7 @@ func main(){
 
 	ptr3.AppendtoFile("c.txt", []byte("kobe\n"))
 
-	content, _ = ptr2.LoadFile("b.txt")
+	content, _ = ptr3.LoadFile("c.txt")
 
 
 

@@ -2,7 +2,7 @@ package tools
 
 import (
 	"fmt"
-	// "errors"
+	"errors"
 	"log"
 	"github.com/google/uuid"
 	"encoding/json"
@@ -100,19 +100,17 @@ func (userdataptr *User) __getMenuKey(filename string) ([]byte, []byte, error){
 	menuEncKey, _ := ptr.GetKey("ENC-Menu")
 	menuMacKey, _ := ptr.GetKey("MAC-Menu")
 
-	stream, err := GuardedRetrieveDS(
+	stream, _ := GuardedRetrieveDS(
 		menuEncKey, menuMacKey,
 		ptr.Username + "/Menu",
 	)
-
-	if err != nil{
-		panic("Menu has been tampered with!")
-	}
-	
 	var _menu SharedKeyMenu
 	json.Unmarshal(stream, &_menu)
 
-	metaEncKey := _menu.Menu[filename]
+	metaEncKey, ok := _menu.Menu[filename]
+	if !ok {
+		return nil, nil, errors.New("File does not exist!")
+	}
 	metaMacKey := _menu.Menu[filename + "/MAC"]
 
 	return metaEncKey, metaMacKey, nil
@@ -149,25 +147,29 @@ func (userdataptr *User) __setMenuKey(filename string, encKey []byte, macKey []b
 
 */
 
-func (userdataptr* User) OpenFile(filename string) (*File, []byte, []byte){
+func (userdataptr* User) OpenFile(filename string) (*File, []byte, []byte, error){
 	ptr := userdataptr
 
 	index := fmt.Sprintf("%s/%s/Meta", ptr.Username, filename)
 
-	metaEncKey, metaMacKey, _ := ptr.__getMenuKey(filename)
+	metaEncKey, metaMacKey, err := ptr.__getMenuKey(filename)
+	if err != nil{
+		return nil, nil, nil, errors.New("File does not exist!")
+	}
 
 	var handler File
 	stream, err := GuardedRetrieveDS(metaEncKey, metaMacKey, index)
+
 	if err != nil{
-		log.Fatal(err)
+		return nil, nil, nil, errors.New("File has been compromised!")
 	}
 	json.Unmarshal(stream, &handler)
 
 	if !handler.Linked{
-		return &handler, metaEncKey, metaMacKey
+		return &handler, metaEncKey, metaMacKey, nil
 	}else{
 		handler, metaEncKey, metaMacKey := __shareTreeTraverse(&handler)
-		return handler, metaEncKey, metaMacKey
+		return handler, metaEncKey, metaMacKey, nil
 	}
 
 }
@@ -239,7 +241,6 @@ func (handler *File) Load() ([]byte, error){
 	for i:=0; i<handler.FBC; i++{
 		blockContent, err := handler.LoadBlock(i)
 		if err != nil{
-			log.Fatal(err)
 			return nil, err
 		}
 		copy(content[cnt:], blockContent)
@@ -255,19 +256,12 @@ func (userdataptr* User) FileMetaUpdate(filename string, updatedMeta *File) erro
 	var metaEncKey []byte
 	var index string
 
-	handler, metaEncKey, metaMacKey := ptr.OpenFile(filename)
-
+	handler, metaEncKey, metaMacKey, err := ptr.OpenFile(filename)
+	if err != nil{
+		return err
+	}
 
 	index = fmt.Sprintf("%s/%s/Meta", handler.Username, handler.Filename)
-
-	// if !handler.Linked{
-	// 	metaEncKey, metaMacKey, _ = ptr.__getMenuKey(filename)
-	// }
-	// else{
-	// 		index = fmt.Sprintf("%s/%s/Meta", handler.Link.Owner, handler.Link.Filename)
-	// 		metaEncKey = handler.Link.MetaEncKey
-	// 		metaMacKey = handler.Link.MetaMacKey
-	// }
 	GuardedStoreDS(metaEncKey, metaMacKey, index, *updatedMeta)
 	return nil
 }
