@@ -237,7 +237,7 @@ func main(){
 	D_inivite_F, _ := ptrD.CreateInvitation(d_local_name_f,userF)
 	fmt.Printf("Now F accept inivation from device1\n")
 	f_local_name_f := "F_b.txt"
-	ptrF.AcceptInvitation(userB,D_inivite_F,f_local_name_f)
+	ptrF.AcceptInvitation(userD, D_inivite_F,f_local_name_f)
 	fmt.Printf("Now F store file b.txt from device1\n")
 	// fmt.Printf("================begin=====================\n")
 	ptrF.StoreFile(f_local_name_f,[]byte("F rewrites the file!\n"))

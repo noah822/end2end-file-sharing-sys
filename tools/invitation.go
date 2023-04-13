@@ -67,9 +67,27 @@ func (userdataptr *User) CreateInvitation (filename string, recipientUsername st
 
 	index := fmt.Sprintf("Inv/%s-%s-%s", ptr.Username, recipientUsername, filename)
 
-	stream, _ := json.Marshal(inv)
+	invStream, _ := json.Marshal(inv)
 
-	ctext := HybridEnc(recipientPK, stream)
+	dsskEncKey, _ := ptr.GetKey("ENC-DSSK")
+	dsskMacKey, _ := ptr.GetKey("MAC-DSSK")
+
+	stream, err := GuardedRetrieveDS(
+		dsskEncKey, dsskMacKey,
+		fmt.Sprintf("%s/DSSK", ptr.Username),
+	)
+	if err != nil{
+		return uuid.UUID{}, err
+	}
+
+	var signKey userlib.DSSignKey
+	json.Unmarshal(stream, &signKey)
+
+	ctext, err := HybridEnc(recipientPK, signKey, invStream)
+	if err != nil{
+		return uuid.UUID{}, err
+	}
+	
 
 	/*
 		ctext, err := userlib.PKEEnc(recipientPK, stream)
@@ -99,7 +117,21 @@ func (userdataptr *User) AcceptInvitation(senderUsername string, invitationPtr u
 
 	var inv Invitation
 	ctext, _ := userlib.DatastoreGet(invitationPtr)
-	ptext := HybridDec(SK, ctext)
+
+	verifyKey, ok := userlib.KeystoreGet(senderUsername + "/DS")
+
+	if !ok{
+		return errors.New("Invalid Sender Name!")
+	}
+
+	ptext, err := HybridDec(SK, userlib.DSVerifyKey(verifyKey), ctext)
+	if err != nil{
+		return errors.New("Invalid Sender Name!")
+	}
+
+	if err != nil{
+		return err
+	}
 	json.Unmarshal(ptext, &inv)
 
 

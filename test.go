@@ -23,7 +23,7 @@ func main(){
 	// if err != nil{
 		// 	log.Fatal(err)
 		// }
-		fmt.Printf("name: %s\npwd: %s\n", ptr2.Username, ptr2.Password)
+	fmt.Printf("name: %s\npwd: %s\n", ptr2.Username, ptr2.Password)
 
 	user3 := "Coco"
 	pwd3 := "password"
@@ -31,7 +31,7 @@ func main(){
 	ptr3, _ := tools.LoginCheck(user3, "password")
 
 	A := "test.txt"
-	content := []byte("hello world\n")
+	content := []byte("\nhello world\n")
 
 	ptr1.StoreFile(A, content)
 
@@ -48,14 +48,11 @@ func main(){
 	ptr1.RevokeAccess("test.txt", "Bob")
 	// test C
 
-	ptr3.AppendtoFile("c.txt", []byte("kobe\n"))
+	ptr3.AppendToFile("c.txt", []byte("kobe\n"))
 
 	content, _ = ptr3.LoadFile("c.txt")
 
 
 
 	fmt.Printf("%v", string(content))
-
-
-	
 }

@@ -210,30 +210,47 @@ func SerThenEnc(encKey interface{}, content interface{})[]byte{
 */
 
 type Packet struct {
+	Signature []byte
 	SymKey []byte
 	Content []byte
 }
 
 
-func HybridEnc(PK userlib.PKEEncKey, content []byte)[]byte{
+func HybridEnc(PK userlib.PKEEncKey, signKey userlib.DSSignKey, content []byte)([]byte, error){
 	symKey := userlib.RandomBytes(16)
 	encryptedSymKey, _ := userlib.PKEEnc(PK, symKey)
 	ctext := userlib.SymEnc(symKey, userlib.RandomBytes(16), content)
 
-	stream, _ := json.Marshal(Packet{encryptedSymKey, ctext})
-	return stream
+	var container []byte = append(encryptedSymKey, ctext...)
+
+
+	signature, err := userlib.DSSign(signKey, container)
+	if err != nil{
+		return nil, errors.New("Error occurs when signing the invitation!")
+	}
+
+	stream, _ := json.Marshal(Packet{signature, encryptedSymKey, ctext})
+	return stream, nil
 }
 
 /*
 	Only return decrypted content
 */
 
-func HybridDec(SK userlib.PKEDecKey, stream []byte)[]byte{
+func HybridDec(SK userlib.PKEDecKey, verifyKey userlib.DSVerifyKey , stream []byte)([]byte, error){
 	var packet Packet
 	json.Unmarshal(stream, &packet)
+
+	var container []byte = append(packet.SymKey, packet.Content...)
+	err := userlib.DSVerify(verifyKey, container, packet.Signature)
+
+	if err != nil{
+		return nil, errors.New("Invitation has been tampered with!")
+	}
+
 	symKey, _ := userlib.PKEDec(SK, packet.SymKey)
 	ptext := userlib.SymDec(symKey, packet.Content)
-	return ptext
+	return ptext, nil
 } 
 
 
