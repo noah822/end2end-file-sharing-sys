@@ -9,8 +9,8 @@ import (
 
 
 func InitUser(username string, password string) (userdataptr *User, err error) {
-	if len(password) == 0{
-		return nil, errors.New("Empty password is not allowed!")
+	if len(username) == 0{
+		return nil, errors.New("Empty username is not allowed!")
 	}
 	ptr, err := SignUp(username, password)
 	if err != nil{
@@ -21,6 +21,9 @@ func InitUser(username string, password string) (userdataptr *User, err error) {
 
 
 func GetUser(username string, password string) (userdataptr *User, err error) {
+	if len(username) == 0{
+		return nil, errors.New("Empty username is not allowed!")
+	}
 	ptr, err := LoginCheck(username, password)
 	return ptr, err
 }
