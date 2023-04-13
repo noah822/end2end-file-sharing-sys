@@ -3,7 +3,6 @@ package tools
 import (
 	"fmt"
 	"errors"
-	"log"
 	"github.com/google/uuid"
 	"encoding/json"
 	userlib "github.com/cs161-staff/project2-userlib"
@@ -168,13 +167,16 @@ func (userdataptr* User) OpenFile(filename string) (*File, []byte, []byte, error
 	if !handler.Linked{
 		return &handler, metaEncKey, metaMacKey, nil
 	}else{
-		handler, metaEncKey, metaMacKey := __shareTreeTraverse(&handler)
+		handler, metaEncKey, metaMacKey, err := __shareTreeTraverse(&handler)
+		if err != nil{
+			return nil, nil, nil, err
+		}
 		return handler, metaEncKey, metaMacKey, nil
 	}
 
 }
 
-func __shareTreeTraverse(handler *File) (*File, []byte, []byte){
+func __shareTreeTraverse(handler *File) (*File, []byte, []byte, error){
 	cur := handler
 	var metaEncKey []byte
  	var metaMacKey []byte
@@ -186,11 +188,11 @@ func __shareTreeTraverse(handler *File) (*File, []byte, []byte){
 			cur.Link.MetaBlockUUID, cur.Link.MetaMacUUID,
 		)
 		if err != nil{
-			log.Fatal(err)
+			return nil, nil, nil, errors.New("Access is likely to be revoked!")
 		}
 		json.Unmarshal(stream, &cur)
 	}
-	return cur, metaEncKey, metaMacKey
+	return cur, metaEncKey, metaMacKey, nil
 }
 
 func (handler *File) Store(blockNum int, content []byte) error {

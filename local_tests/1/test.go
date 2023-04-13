@@ -31,12 +31,12 @@ func main(){
 	user := "Alice"
 	pwd := "password"
 
-	tools.InitUser(user, pwd)
-	// if err != nil{
-	// 	fmt.Printf("%v", err)
-	// }
+	ptr, err := tools.InitUser(user, pwd)
+	if err != nil{
+		fmt.Printf("%v", err)
+	}
 
-	ptr, err := tools.GetUser(user, pwd)
+	ptr, err = tools.GetUser(user, pwd)
 	if err != nil{
 		fmt.Printf("%v", err)
 	}

@@ -42,7 +42,7 @@ func (userdataptr *User) StoreFile(filename string, content []byte) error{
 }
 
 
-func (userdataptr *User) AppendtoFile(filename string, content []byte)(error){
+func (userdataptr *User) AppendToFile(filename string, content []byte)(error){
 	ptr := userdataptr
 	handler, _, _, err := ptr.OpenFile(filename)
 
@@ -50,14 +50,13 @@ func (userdataptr *User) AppendtoFile(filename string, content []byte)(error){
 		return err
 	}
 
-
 	handler.FBC++
 	handler.Size += len(content)
 
 	handler.Store(handler.FBC-1, content)
 
 	ptr.FileMetaUpdate(filename, handler)
-	
+
 	return nil
 
 	// handler = ptr.OpenFile(filename)

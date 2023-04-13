@@ -21,7 +21,7 @@ import (
 */
 
 type LoginSlot struct {
-	PasswordHash []byte
+	EncPasswordHash []byte
 	Signature []byte
 	Salt []byte
 }
@@ -50,16 +50,23 @@ func SignUp(username string, password string) (*User, error){
 
 
 	// sign the hash using generated SK
-	signature, _ := userlib.DSSign(SignKey, passwordHash)
-
+	
 	err = userlib.KeystoreSet(username+"/DS", VerifyKey)
 	err = userlib.KeystoreSet(username, PK)
 	if err != nil {
 		return nil, errors.New("Username already exists!")
 	}
+	
+	encKey := userlib.Argon2Key([]byte(password), salt, 16)
+	
+	encPasswordHash := userlib.SymEnc(
+		encKey, userlib.RandomBytes(16), 
+		passwordHash,
+	)
+	signature, _ := userlib.DSSign(SignKey, encPasswordHash)
 
 	loginSlot := LoginSlot {
-		PasswordHash: passwordHash,
+		EncPasswordHash: encPasswordHash,
 		Signature: signature,
 		Salt: salt,
 	}
@@ -103,16 +110,20 @@ func LoginCheck(username string, password string) (*User, error) {
 	// check signature
 	err = userlib.DSVerify(
 		verifyKey,
-		loginSlot.PasswordHash,
+		loginSlot.EncPasswordHash,
 		loginSlot.Signature,
 	)
 	if err != nil{
 		return nil, errors.New("DataStore is likely to be tampered")
 	}
 
+	decKey := userlib.Argon2Key([]byte(password), loginSlot.Salt, 16)
+
+	passwordHash := userlib.SymDec(decKey, loginSlot.EncPasswordHash)
+
 
 	hash := userlib.Hash([]byte(username + password))
-	if (ByteCompare(loginSlot.PasswordHash, hash)){
+	if (ByteCompare(passwordHash, hash)){
 		userdataptr := &User {
 			Username: username,
 			Password: password,
