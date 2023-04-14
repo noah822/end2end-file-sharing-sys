@@ -22,6 +22,7 @@ type File struct {
 	// Soft link to another file if necessary, default: nil 
 	Linked bool
 	Link SoftLink
+	Prefix []byte
 
 	Username string
 	Filename string
@@ -39,11 +40,14 @@ func (userdataptr *User)CreateFile(filename string, size int) *File {
 	ptr := userdataptr
 	metaEncKey, metaMacKey, _ := ptr.__initMenuKey(filename)
 
+	prefix, _ := ptr.__initPrefix(filename)
+
 
 	handler := File{
 		Linked: false,
 		Username: ptr.Username,
 		Filename: filename,
+		Prefix: prefix,
 
 		GKey: userlib.RandomBytes(16),
 		AccessList: make(map[string]RecipientTuple),
@@ -58,9 +62,10 @@ func (userdataptr *User)CreateFile(filename string, size int) *File {
 	
 	GuardedStoreDS(
 		metaEncKey, metaMacKey,
-		fmt.Sprintf("%s/%s/Meta", ptr.Username, filename),
+		fmt.Sprintf("%v/%s/%s/Meta", prefix, ptr.Username, filename),
 		handler,
 	)
+	
 	return &handler
 }
 
@@ -92,6 +97,48 @@ func (userdataptr* User) __initMenuKey(filename string) ([]byte, []byte, error){
 	ptr.EncMacStoreDS("Menu", _menu)
 
 	return metaEncKey, metaMacKey, nil
+}
+
+func (userdataptr* User) __initPrefix(filename string)([]byte, error){
+	ptr := userdataptr
+
+	var prefixMenu map[string] []byte
+	prefix := userlib.RandomBytes(16)
+
+	prefixEncKey, _ := ptr.GetKey("ENC-Prefix")
+	prefixMacKey, _ := ptr.GetKey("MAC-Prefix")
+
+	stream, _ := GuardedRetrieveDS(
+		prefixEncKey, prefixMacKey, 
+		ptr.Username + "/Prefix",
+	)
+
+	json.Unmarshal(stream, &prefixMenu)
+	prefixMenu[filename] = prefix
+
+	ptr.EncMacStoreDS("Prefix", prefixMenu)
+	return prefix, nil
+
+}
+
+func (userdataptr* User) __getPrefix(filename string)([]byte, error){
+	ptr := userdataptr
+	
+	var prefixMenu map[string] []byte
+	
+	prefixEncKey, _ := ptr.GetKey("ENC-Prefix")
+	prefixMacKey, _ := ptr.GetKey("MAC-Prefix")
+	
+	stream, _ := GuardedRetrieveDS(
+		prefixEncKey, prefixMacKey, 
+		ptr.Username + "/Prefix",
+	)
+	
+	json.Unmarshal(stream, &prefixMenu)
+
+	
+	return prefixMenu[filename], nil
+
 }
 
 func (userdataptr *User) __getMenuKey(filename string) ([]byte, []byte, error){
@@ -149,13 +196,16 @@ func (userdataptr *User) __setMenuKey(filename string, encKey []byte, macKey []b
 func (userdataptr* User) OpenFile(filename string) (*File, []byte, []byte, error){
 	ptr := userdataptr
 
-	index := fmt.Sprintf("%s/%s/Meta", ptr.Username, filename)
-
+	
 	metaEncKey, metaMacKey, err := ptr.__getMenuKey(filename)
 	if err != nil{
 		return nil, nil, nil, errors.New("File does not exist!")
 	}
+	
+	prefix, _ := ptr.__getPrefix(filename)
 
+	index := fmt.Sprintf("%v/%s/%s/Meta", prefix, ptr.Username, filename)
+	
 	var handler File
 	stream, err := GuardedRetrieveDS(metaEncKey, metaMacKey, index)
 
@@ -207,11 +257,11 @@ func (handler *File) Store(blockNum int, content []byte) error {
 	ctext   := userlib.SymEnc(fileEncKey, userlib.RandomBytes(16), content)
 	hmac, _ := userlib.HMACEval(fileMacKey, ctext)
 	StoreDS(
-		fmt.Sprintf("%s/%s/%v", handler.Username, handler.Filename, blockNum),
+		fmt.Sprintf("%v/%s/%s/%v", handler.Prefix, handler.Username, handler.Filename, blockNum),
 		ctext)
 
 	StoreDS(
-		fmt.Sprintf("%s/%s/%v/MAC", handler.Username, handler.Filename, blockNum),
+		fmt.Sprintf("%v/%s/%s/%v/MAC", handler.Prefix, handler.Username, handler.Filename, blockNum),
 		hmac)
 	
 	return nil
@@ -226,7 +276,7 @@ func (handler *File) LoadBlock(blockNum int) ([]byte, error){
 		fmt.Sprintf("MAC-%v", blockNum),
 	)
 
-	index := fmt.Sprintf("%s/%s/%v", handler.Username, handler.Filename, blockNum)
+	index := fmt.Sprintf("%v/%s/%s/%v", handler.Prefix, handler.Username, handler.Filename, blockNum)
 	content, err := GuardedRetrieveDS(fileEncKey, fileMacKey, index)
 	if err != nil{
 		return nil, err
@@ -263,7 +313,7 @@ func (userdataptr* User) FileMetaUpdate(filename string, updatedMeta *File) erro
 		return err
 	}
 
-	index = fmt.Sprintf("%s/%s/Meta", handler.Username, handler.Filename)
+	index = fmt.Sprintf("%v/%s/%s/Meta", handler.Prefix, handler.Username, handler.Filename)
 	GuardedStoreDS(metaEncKey, metaMacKey, index, *updatedMeta)
 	return nil
 }

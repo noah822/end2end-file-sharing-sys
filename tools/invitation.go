@@ -51,14 +51,15 @@ func (userdataptr *User) CreateInvitation (filename string, recipientUsername st
 	}
 
 	metaEncKey, metaMacKey, _ := ptr.__getMenuKey(filename)
+	prefix, _ := ptr.__getPrefix(filename)
 
 	// metaEncKey, metaMacKey, _ := ptr.__getMenuKey(filename)
 	inv := Invitation{
 		MetaBlockUUID: GetUUID(
-			fmt.Sprintf("%s/%s/Meta", ptr.Username, filename),
+			fmt.Sprintf("%v/%s/%s/Meta", prefix, ptr.Username, filename),
 		),
 		MetaMacUUID: GetUUID(
-			fmt.Sprintf("%s/%s/Meta/MAC", ptr.Username, filename),
+			fmt.Sprintf("%v/%s/%s/Meta/MAC", prefix, ptr.Username, filename),
 		),
 		Recepient: recipientUsername,
 		MetaEncKey: metaEncKey,
@@ -156,11 +157,12 @@ func (userdataptr *User) AcceptInvitation(senderUsername string, invitationPtr u
 
 
 	metaEncKey, metaMacKey, _ := ptr.__initMenuKey(filename)
+	prefix, _ := ptr.__initPrefix(filename)
 
 
 	GuardedStoreDS(
 		metaEncKey, metaMacKey,
-		fmt.Sprintf("%s/%s/Meta", ptr.Username, filename),
+		fmt.Sprintf("%v/%s/%s/Meta", prefix, ptr.Username, filename),
 		handler,
 	)
 
@@ -169,10 +171,10 @@ func (userdataptr *User) AcceptInvitation(senderUsername string, invitationPtr u
 
 	recipientTuple := RecipientTuple{
 		MetaBlockUUID: GetUUID(
-			fmt.Sprintf("%s/%s/Meta", ptr.Username, filename),
+			fmt.Sprintf("%v/%s/%s/Meta", prefix, ptr.Username, filename),
 		),
 		MetaMacUUID: GetUUID(
-			fmt.Sprintf("%s/%s/Meta/MAC", ptr.Username, filename),
+			fmt.Sprintf("%v/%s/%s/Meta/MAC", prefix, ptr.Username, filename),
 		), 
 		MetaEncKey: metaEncKey,
 		MetaMacKey: metaMacKey,
@@ -204,15 +206,30 @@ func (userdataptr *User) RevokeAccess(filename string, recipientUsername string)
 	/*
 		1. Re-encrypt meta block and file content
 		2. distribute to direct children
+		3. Re-generate file prefix
 	*/
 	var prevHandler File = File{
 		Filename: handler.Filename,
 		Username: handler.Username,
+		Prefix: handler.Prefix,
 		GKey: handler.GKey,
 	}
 
 	newGKey := userlib.RandomBytes(16)
 	handler.GKey = newGKey
+
+	// Re-generate prefix
+	newPrefix, _ := ptr.__getPrefix(filename)
+	handler.Prefix = newPrefix
+
+
+	newMetaBlockUUID := GetUUID(
+		fmt.Sprintf("%v/%s/%s/Meta", newPrefix, ptr.Username, filename),
+	)
+
+	newMetaMacUUID := GetUUID(
+		fmt.Sprintf("%v/%s/%s/Meta/MAC", newPrefix, ptr.Username, filename),
+	)
 
 
 	// Re-encrypt/mac file content
@@ -227,8 +244,7 @@ func (userdataptr *User) RevokeAccess(filename string, recipientUsername string)
 	delete(handler.AccessList, recipientUsername)
 
 	// distribute new metaKeys
-	for name, recipientTuple := range handler.AccessList{
-		fmt.Println(name)
+	for _, recipientTuple := range handler.AccessList{
 		var recipientMeta File
 		stream, _ := GuardedRetrieveDSUUID(
 			recipientTuple.MetaEncKey,
@@ -238,6 +254,9 @@ func (userdataptr *User) RevokeAccess(filename string, recipientUsername string)
 		)
 		json.Unmarshal(stream, &recipientMeta)
 
+
+		recipientMeta.Link.MetaBlockUUID = newMetaBlockUUID
+		recipientMeta.Link.MetaMacUUID = newMetaMacUUID
 		recipientMeta.Link.MetaEncKey = newMetaEncKey
 		recipientMeta.Link.MetaMacKey = newMetaMacKey
 
@@ -252,7 +271,7 @@ func (userdataptr *User) RevokeAccess(filename string, recipientUsername string)
 
 	GuardedStoreDS(
 		newMetaEncKey, newMetaMacKey,
-		fmt.Sprintf("%s/%s/Meta", ptr.Username, filename),
+		fmt.Sprintf("%v/%s/%s/Meta", newPrefix, ptr.Username, filename),
 		handler,
 	)
 	

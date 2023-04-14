@@ -74,6 +74,7 @@ func SignUp(username string, password string) (*User, error){
 	sharedKeyMenu := SharedKeyMenu {
 		Menu: make(map[string] []byte),
 	}
+	prefixMenu := make(map[string] []byte)
 
 	ptr := &User {
 		Username: username,
@@ -86,6 +87,7 @@ func SignUp(username string, password string) (*User, error){
 	ptr.EncMacStoreDS("DSSK", SignKey)
 
 	ptr.EncMacStoreDS("Menu", sharedKeyMenu)
+	ptr.EncMacStoreDS("Prefix", prefixMenu)
 
 	stream, _ := json.Marshal(loginSlot)
 	StoreDS(username + "/login", stream)

@@ -42,24 +42,28 @@ func main(){
 
 
 
-	// B invite C
-	inviteptr, _ = ptr2.CreateInvitation("b.txt", "Coco")
-	ptr3.AcceptInvitation("Bob", inviteptr, "c.txt")
+	// A invite C
+	inviteptr, _ = ptr1.CreateInvitation(A, "Coco")
+	ptr3.AcceptInvitation("Alice", inviteptr, "c.txt")
 	
 
 	// // A revoke B
 	ptr1.RevokeAccess("test.txt", "Bob")
 	// // test C
 
-	// ptr3.AppendToFile("c.txt", []byte("kobe\n"))
+	ptr3.AppendToFile("c.txt", []byte("kobe\n"))
 
-	inviteptr, err := ptr2.CreateInvitation("b.txt", "Coco")
-	if err != nil{
-		fmt.Printf("%v\n", err)
-	}
+	// inviteptr, _ := ptr2.CreateInvitation("b.txt", "Coco")
 	// ptr3.AcceptInvitation("Bob", inviteptr, "c.txt")
 
 
+	content, err := ptr2.LoadFile("b.txt")
 
-	// fmt.Printf("%v", string(content))
+	if err != nil{
+		fmt.Printf("%v\n", err)
+	}
+
+
+
+	fmt.Printf("%v", string(content))
 }
