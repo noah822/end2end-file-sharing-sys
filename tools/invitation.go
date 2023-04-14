@@ -43,7 +43,12 @@ type RecipientTuple struct {
 */
 
 func (userdataptr *User) CreateInvitation (filename string, recipientUsername string)(uuid.UUID, error){
+
 	ptr := userdataptr
+	_, _, _, err := ptr.OpenFile(filename)
+	if err != nil{
+		return uuid.UUID{}, errors.New("File sharer does not have access to the file or the file does not exist!")
+	}
 
 	metaEncKey, metaMacKey, _ := ptr.__getMenuKey(filename)
 
@@ -105,6 +110,13 @@ func (userdataptr *User) CreateInvitation (filename string, recipientUsername st
 
 func (userdataptr *User) AcceptInvitation(senderUsername string, invitationPtr uuid.UUID, filename string) (error){
 	ptr := userdataptr
+	// check whether the file name already exists under the recipient's namespace
+	_, _, _, err := ptr.OpenFile(filename)
+	if err == nil{
+		return errors.New("Filename already exists in recipient's namespace!")
+	}
+
+
 	encSKKey, _ := ptr.GetKey("ENC-SK")
 	macSKKey, _ := ptr.GetKey("MAC-SK")
 
