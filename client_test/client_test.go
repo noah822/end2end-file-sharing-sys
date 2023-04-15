@@ -244,4 +244,188 @@ var _ = Describe("Client Tests", func() {
 		})
 
 	})
+
+	Describe("CreateInvitation test", func(){
+		Specify("Filename does not exist under the namespace of the caller", func(){
+			userlib.DebugMsg("Initializing users Alice, Bob, and Charles.")
+			alice, err = client.InitUser("alice", defaultPassword)
+			Expect(err).To(BeNil())
+			
+			bob, err = client.InitUser("bob", defaultPassword)
+			Expect(err).To(BeNil())
+			
+			charles, err = client.InitUser("charles", defaultPassword)
+			Expect(err).To(BeNil())
+
+			userlib.DebugMsg("Alice create invitation on aliceFile for Bob, and Bob accepts it.")
+			_, err := alice.CreateInvitation(aliceFile, "bob")
+			Expect(err).ToNot(BeNil())
+
+			userlib.DebugMsg("Alice create aliceFile.txt.")
+			err = alice.StoreFile(aliceFile, []byte(contentOne))
+			Expect(err).To(BeNil())
+		})
+
+		Specify("Recipient does not exist", func(){
+			userlib.DebugMsg("Initializing users Alice")
+			alice, err = client.InitUser("alice", defaultPassword)
+			Expect(err).To(BeNil())
+			
+			userlib.DebugMsg("Alice create aliceFile.txt.")
+			err = alice.StoreFile(aliceFile, []byte(contentOne))
+			Expect(err).To(BeNil())
+
+			userlib.DebugMsg("Alice create invitation on aliceFile for Bob, but Bob does not exist")
+			_, err := alice.CreateInvitation(aliceFile, "bob")
+			Expect(err).ToNot(BeNil())
+		})
+	})
+
+	Describe("Outdated invitation test", func (){
+		Specify("Revoke invitation sharer, before invitation gets accepted", func(){
+
+			userlib.DebugMsg("Initializing users Alice, Bob, and Charles.")
+			alice, err = client.InitUser("alice", defaultPassword)
+			Expect(err).To(BeNil())
+			
+			bob, err = client.InitUser("bob", defaultPassword)
+			Expect(err).To(BeNil())
+			
+			charles, err = client.InitUser("charles", defaultPassword)
+			Expect(err).To(BeNil())
+
+			userlib.DebugMsg("Alice create aliceFile.txt.")
+			err = alice.StoreFile(aliceFile, []byte(contentOne))
+			Expect(err).To(BeNil())
+			
+			userlib.DebugMsg("Alice create invitation on aliceFile for Bob, and Bob accepts it.")
+			alice_invite_bob, err := alice.CreateInvitation(aliceFile, "bob")
+			Expect(err).To(BeNil())
+
+			err = bob.AcceptInvitation("alice", alice_invite_bob, bobFile)
+			Expect(err).To(BeNil())
+			
+			userlib.DebugMsg("Bob invites Charles.")
+			bob_invite_charles, err := bob.CreateInvitation(bobFile, "charles")
+			Expect(err).To(BeNil())
+			
+			userlib.DebugMsg("Alice revokes Bob. Then invitation from Bob to Charles becomes outdated")
+
+			err = alice.RevokeAccess(aliceFile, "bob")
+			Expect(err).To(BeNil())
+
+			err = charles.AcceptInvitation("bob", bob_invite_charles, charlesFile)
+			Expect(err).To(BeNil())
+
+			userlib.DebugMsg("Operation on file of by Charles should be invalid")
+			_, err = charles.LoadFile(charlesFile)
+			Expect(err).ToNot(BeNil())
+		})
+
+	
+	})
+
+
+
+	Describe("Outdated invitation test", func (){
+		Specify("Revoke invitation sharer, before invitation gets accepted", func(){
+
+			userlib.DebugMsg("Initializing users Alice, Bob, and Charles.")
+			alice, err = client.InitUser("alice", defaultPassword)
+			Expect(err).To(BeNil())
+			
+			bob, err = client.InitUser("bob", defaultPassword)
+			Expect(err).To(BeNil())
+			
+			charles, err = client.InitUser("charles", defaultPassword)
+			Expect(err).To(BeNil())
+
+			userlib.DebugMsg("Alice create aliceFile.txt.")
+			err = alice.StoreFile(aliceFile, []byte(contentOne))
+			Expect(err).To(BeNil())
+			
+			userlib.DebugMsg("Alice create invitation on aliceFile for Bob, and Bob accepts it.")
+			alice_invite_bob, err := alice.CreateInvitation(aliceFile, "bob")
+			Expect(err).To(BeNil())
+
+			err = bob.AcceptInvitation("alice", alice_invite_bob, bobFile)
+			Expect(err).To(BeNil())
+			
+			userlib.DebugMsg("Bob invites Charles.")
+			bob_invite_charles, err := bob.CreateInvitation(bobFile, "charles")
+			Expect(err).To(BeNil())
+			
+			userlib.DebugMsg("Alice revokes Bob. Then invitation from Bob to Charles becomes outdated")
+
+			err = alice.RevokeAccess(aliceFile, "bob")
+			Expect(err).To(BeNil())
+
+			err = charles.AcceptInvitation("bob", bob_invite_charles, charlesFile)
+			Expect(err).To(BeNil())
+
+			userlib.DebugMsg("Operation on file of by Charles should be invalid")
+			_, err = charles.LoadFile(charlesFile)
+			Expect(err).ToNot(BeNil())
+		})
+
+
+		
+	})
+
+	Describe("Unmatched invitation and senderName arg", func() {
+		Specify("wrong senderName", func(){
+			userlib.DebugMsg("Initializing users Alice, Bob, and Charles.")
+			alice, err = client.InitUser("alice", defaultPassword)
+			Expect(err).To(BeNil())
+			
+			bob, err = client.InitUser("bob", defaultPassword)
+			Expect(err).To(BeNil())
+			
+			charles, err = client.InitUser("charles", defaultPassword)
+			Expect(err).To(BeNil())
+
+			userlib.DebugMsg("Alice create aliceFile.txt.")
+			err = alice.StoreFile(aliceFile, []byte(contentOne))
+			Expect(err).To(BeNil())
+			
+			userlib.DebugMsg("Alice create invitation on aliceFile for Bob.")
+			alice_invite_bob, err := alice.CreateInvitation(aliceFile, "bob")
+			Expect(err).To(BeNil())
+			
+
+			userlib.DebugMsg("Bob accepts it with incorrect senderName specified.")
+			err = bob.AcceptInvitation("charles", alice_invite_bob, bobFile)
+			Expect(err).ToNot(BeNil())		
+		})
+	}) 
+
+
+	Describe("Duplicate filename under recipient's namespace", func() {
+		Specify("duplicate filename when accept the invitation", func(){
+			userlib.DebugMsg("Initializing users Alice, Bob")
+			alice, err = client.InitUser("alice", defaultPassword)
+			Expect(err).To(BeNil())
+			
+			bob, err = client.InitUser("bob", defaultPassword)
+			Expect(err).To(BeNil())
+
+			userlib.DebugMsg("Alice create file.txt.")
+			err = alice.StoreFile("file.txt", []byte(contentOne))
+			Expect(err).To(BeNil())
+
+			userlib.DebugMsg("Bob create file.txt.")
+			err = bob.StoreFile("file.txt", []byte(contentOne))
+			Expect(err).To(BeNil())
+			
+			userlib.DebugMsg("Alice create invitation on aliceFile for Bob.")
+			alice_invite_bob, err := alice.CreateInvitation("file.txt", "bob")
+			Expect(err).To(BeNil())
+			
+			userlib.DebugMsg("Bob accepts it with incorrect senderName specified.")
+			err = bob.AcceptInvitation("alice", alice_invite_bob, "file.txt")
+			Expect(err).ToNot(BeNil())		
+		})
+	}) 
+
+
 })
