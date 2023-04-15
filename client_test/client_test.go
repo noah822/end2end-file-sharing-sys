@@ -428,4 +428,59 @@ var _ = Describe("Client Tests", func() {
 	}) 
 
 
+	Describe("Revocation sanity check", func() {
+		Specify("File revoke does not exist", func(){
+			userlib.DebugMsg("Initializing users Alice, Bob")
+			alice, err = client.InitUser("alice", defaultPassword)
+			Expect(err).To(BeNil())
+			
+			bob, err = client.InitUser("bob", defaultPassword)
+			Expect(err).To(BeNil())
+
+			userlib.DebugMsg("Alice create aliceFile.txt.")
+			err = alice.StoreFile(aliceFile, []byte(contentOne))
+			Expect(err).To(BeNil())
+
+			
+			userlib.DebugMsg("Alice create invitation on aliceFile for Bob.")
+			alice_invite_bob, err := alice.CreateInvitation(aliceFile, "bob")
+			Expect(err).To(BeNil())
+			
+			userlib.DebugMsg("Bob accepts it properly.")
+			err = bob.AcceptInvitation("alice", alice_invite_bob, bobFile)
+			Expect(err).To(BeNil())		
+
+			userlib.DebugMsg("Alice tries to revoke a file which does not exist under her namespace.")
+			err = alice.RevokeAccess("random.txt", "bob")
+			Expect(err).ToNot(BeNil())		
+		})
+
+		Specify("Recipient to revoke does not exist", func(){
+			userlib.DebugMsg("Initializing users Alice, Bob")
+			alice, err = client.InitUser("alice", defaultPassword)
+			Expect(err).To(BeNil())
+			
+			bob, err = client.InitUser("bob", defaultPassword)
+			Expect(err).To(BeNil())
+
+			userlib.DebugMsg("Alice create aliceFile.txt.")
+			err = alice.StoreFile(aliceFile, []byte(contentOne))
+			Expect(err).To(BeNil())
+
+			
+			userlib.DebugMsg("Alice create invitation on aliceFile for Bob.")
+			alice_invite_bob, err := alice.CreateInvitation(aliceFile, "bob")
+			Expect(err).To(BeNil())
+			
+			userlib.DebugMsg("Bob accepts it properly.")
+			err = bob.AcceptInvitation("alice", alice_invite_bob, bobFile)
+			Expect(err).To(BeNil())		
+
+			userlib.DebugMsg("Alice tries to revoke charles, who does not exist/have access to the file")
+			err = alice.RevokeAccess(aliceFile, "charles")
+			Expect(err).ToNot(BeNil())		
+		})
+	}) 
+
+
 })

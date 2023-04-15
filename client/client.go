@@ -1094,7 +1094,14 @@ func (userdataptr *User) AcceptInvitation(senderUsername string, invitationPtr u
 
 func (userdataptr *User) RevokeAccess(filename string, recipientUsername string) error{
 	ptr := userdataptr
-	handler, _, _, _ := ptr.OpenFile(filename)
+	handler, _, _, err := ptr.OpenFile(filename)
+	if err != nil{
+		return errors.New("File to revoke does not exist!")
+	}
+	if _, ok := handler.AccessList[recipientUsername]; !ok{
+		return errors.New("Recipent to revoke does not exist!")
+	}
+	
 	newMetaEncKey, newMetaMacKey, _ := ptr.__initMenuKey(filename)
 
 	/*
