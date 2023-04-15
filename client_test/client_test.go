@@ -315,61 +315,11 @@ var _ = Describe("Client Tests", func() {
 			Expect(err).To(BeNil())
 
 			err = charles.AcceptInvitation("bob", bob_invite_charles, charlesFile)
-			Expect(err).To(BeNil())
-
-			userlib.DebugMsg("Operation on file of by Charles should be invalid")
-			_, err = charles.LoadFile(charlesFile)
 			Expect(err).ToNot(BeNil())
+
 		})
 
 	
-	})
-
-
-
-	Describe("Outdated invitation test", func (){
-		Specify("Revoke invitation sharer, before invitation gets accepted", func(){
-
-			userlib.DebugMsg("Initializing users Alice, Bob, and Charles.")
-			alice, err = client.InitUser("alice", defaultPassword)
-			Expect(err).To(BeNil())
-			
-			bob, err = client.InitUser("bob", defaultPassword)
-			Expect(err).To(BeNil())
-			
-			charles, err = client.InitUser("charles", defaultPassword)
-			Expect(err).To(BeNil())
-
-			userlib.DebugMsg("Alice create aliceFile.txt.")
-			err = alice.StoreFile(aliceFile, []byte(contentOne))
-			Expect(err).To(BeNil())
-			
-			userlib.DebugMsg("Alice create invitation on aliceFile for Bob, and Bob accepts it.")
-			alice_invite_bob, err := alice.CreateInvitation(aliceFile, "bob")
-			Expect(err).To(BeNil())
-
-			err = bob.AcceptInvitation("alice", alice_invite_bob, bobFile)
-			Expect(err).To(BeNil())
-			
-			userlib.DebugMsg("Bob invites Charles.")
-			bob_invite_charles, err := bob.CreateInvitation(bobFile, "charles")
-			Expect(err).To(BeNil())
-			
-			userlib.DebugMsg("Alice revokes Bob. Then invitation from Bob to Charles becomes outdated")
-
-			err = alice.RevokeAccess(aliceFile, "bob")
-			Expect(err).To(BeNil())
-
-			err = charles.AcceptInvitation("bob", bob_invite_charles, charlesFile)
-			Expect(err).To(BeNil())
-
-			userlib.DebugMsg("Operation on file of by Charles should be invalid")
-			_, err = charles.LoadFile(charlesFile)
-			Expect(err).ToNot(BeNil())
-		})
-
-
-		
 	})
 
 	Describe("Unmatched invitation and senderName arg", func() {

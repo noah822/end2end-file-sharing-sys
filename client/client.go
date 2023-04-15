@@ -1049,6 +1049,17 @@ func (userdataptr *User) AcceptInvitation(senderUsername string, invitationPtr u
 		AccessList: make(map[string]RecipientTuple),
 	}
 
+	_, _, _, err = __shareTreeTraverse(
+		&File{
+			Linked: true,
+			Link : SoftLink{inv.MetaBlockUUID, inv.MetaMacUUID, inv.MetaEncKey, inv.MetaMacKey},
+		},
+	)
+	if err != nil{
+		return err
+	}
+
+
 
 	metaEncKey, metaMacKey, _ := ptr.__initMenuKey(filename)
 	prefix, _ := ptr.__initPrefix(filename)
@@ -1120,7 +1131,9 @@ func (userdataptr *User) RevokeAccess(filename string, recipientUsername string)
 	handler.GKey = newGKey
 
 	// Re-generate prefix
-	newPrefix, _ := ptr.__getPrefix(filename)
+
+	oldPrefix, _ := ptr.__getPrefix(filename)
+	newPrefix, _ := ptr.__initPrefix(filename)
 	handler.Prefix = newPrefix
 
 
@@ -1174,6 +1187,13 @@ func (userdataptr *User) RevokeAccess(filename string, recipientUsername string)
 		newMetaEncKey, newMetaMacKey,
 		fmt.Sprintf("%v/%s/%s/Meta", newPrefix, ptr.Username, filename),
 		handler,
+	)
+
+	// make old meta block invalid
+	GuardedStoreDS(
+		newMetaEncKey, newMetaMacKey,
+		fmt.Sprintf("%v/%s/%s/Meta", oldPrefix, ptr.Username, filename),
+		File{},
 	)
 	
 	return nil
