@@ -962,7 +962,7 @@ func (userdataptr *User) CreateInvitation (filename string, recipientUsername st
 
 	recipientPK, ok := userlib.KeystoreGet(recipientUsername)
 	if !ok {
-		panic("Recepient does not exist")
+		return uuid.UUID{}, errors.New("Recepient does not exist")
 	}
 
 	index := fmt.Sprintf("Inv/%s-%s-%s", ptr.Username, recipientUsername, filename)
