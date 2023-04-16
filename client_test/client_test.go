@@ -175,6 +175,7 @@ var _ = Describe("Client Tests", func() {
 			Expect(data).To(Equal([]byte(contentOne + contentTwo + contentThree)))
 		})
 
+		
 		Specify("Basic Test: Testing Revoke Functionality", func() {
 			userlib.DebugMsg("Initializing users Alice, Bob, and Charlie.")
 			alice, err = client.InitUser("alice", defaultPassword)
@@ -245,7 +246,7 @@ var _ = Describe("Client Tests", func() {
 
 	})
 
-	Describe("CreateInvitation test", func(){
+	Describe("Basic Test: CreateInvitation test", func(){
 		Specify("Filename does not exist under the namespace of the caller", func(){
 			userlib.DebugMsg("Initializing users Alice, Bob, and Charles.")
 			alice, err = client.InitUser("alice", defaultPassword)
@@ -281,7 +282,97 @@ var _ = Describe("Client Tests", func() {
 		})
 	})
 
-	Describe("Outdated invitation test", func (){
+	Describe("Edge Test: Empty username test", func(){
+		Specify("Edge Test: Testing empty username", func(){
+			userlib.DebugMsg("Initializing users Alice with empty username")
+			alice, err = client.InitUser(emptyString, defaultPassword)
+			Expect(err).ToNot(BeNil())
+			
+		})
+		
+	})
+	
+
+	Describe("Edge Test: Empty password test", func(){
+		Specify("Edge Test: Testing empty password", func(){
+			userlib.DebugMsg("Initializing users Alice with default password")
+			alice, err = client.InitUser("alice",emptyString)
+			Expect(err).To(BeNil())
+
+			userlib.DebugMsg("Login users Alice with empty password")
+			aliceLaptop, err = client.GetUser("alice", emptyString)
+			Expect(err).To(BeNil())
+			
+		})
+	})
+
+	Describe("Edge Test: Case sensitive test", func(){
+		Specify("Testing Bob != bob", func(){
+			userlib.DebugMsg("Initializing users Bob with default password")
+			bob, err = client.InitUser("Bob",defaultPassword)
+			Expect(err).To(BeNil())
+
+			userlib.DebugMsg("Initializing users Bob with default password")
+			alice, err = client.InitUser("bob",defaultPassword)
+			Expect(err).To(BeNil())
+
+			userlib.DebugMsg("Login users bob with his password")
+			aliceLaptop, err = client.GetUser("bob", defaultPassword)
+			Expect(err).To(BeNil())
+			
+		})
+	})
+
+	Describe("Edge Test: Empty file name and content(store/ load/ append)", func(){
+		Specify("Should support empty file name", func(){
+			userlib.DebugMsg("Initializing users Bob with default password")
+			bob, err = client.InitUser("Bob",defaultPassword)
+			Expect(err).To(BeNil())
+
+			userlib.DebugMsg("Creating empty file with empty name")
+			err = bob.StoreFile("", []byte(""))
+			Expect(err).To(BeNil())
+
+			userlib.DebugMsg("Loading file...")
+			data, err := bob.LoadFile("")
+			Expect(err).To(BeNil())
+			Expect(data).To(Equal([]byte("")))
+
+			userlib.DebugMsg("Appending empty content")
+			err = bob.AppendToFile("", []byte(""))
+			Expect(err).To(BeNil())
+			
+		})
+	})
+
+
+	Describe("Edge Test: Login with Incorrect password test", func(){
+		Specify("Edge Test: Testing empty username", func(){
+			userlib.DebugMsg("Initializing users Alice with default password")
+			alice, err = client.InitUser("alice", defaultPassword)
+			Expect(err).To(BeNil())
+
+			userlib.DebugMsg("Login users Alice with empty password")
+			aliceLaptop, err = client.GetUser("alice", "")
+			Expect(err).ToNot(BeNil())
+			
+		})
+	})
+
+	Describe("Edge Test: Login with non-existed account test", func(){
+		Specify("Edge Test: Testing empty username", func(){
+			// userlib.DebugMsg("Initializing users Alice with empty password")
+			// alice, err = client.InitUser("alice", defaultPassword)
+			// Expect(err).To(BeNil())
+
+			userlib.DebugMsg("Login un-registed users Alice with password")
+			aliceLaptop, err = client.GetUser("alice", "")
+			Expect(err).ToNot(BeNil())
+			
+		})
+	})
+
+	Describe("Test: Outdated invitation test", func (){
 		Specify("Revoke invitation sharer, before invitation gets accepted", func(){
 
 			userlib.DebugMsg("Initializing users Alice, Bob, and Charles.")
@@ -432,5 +523,56 @@ var _ = Describe("Client Tests", func() {
 		})
 	}) 
 
+	Describe("Testing on tampering behaviors:", func(){
+		//key store
+		Specify("Malicious tampering with keystore should be detected.", func() {
+			userlib.DebugMsg("Creating user Alice ")
+			alice, err = client.InitUser("alice", defaultPassword)
+			Expect(err).To(BeNil())
 
+			userlib.DebugMsg("Mallery tries to change public key of alice")
+			malleryPK, _, err := userlib.PKEKeyGen()
+			Expect(err).To(BeNil())
+			keystore := userlib.KeystoreGetMap()
+			userlib.KeystoreClear()
+			for key := range keystore {
+				err = userlib.KeystoreSet(key, malleryPK)
+				Expect(err).To(BeNil())
+			}
+
+			_, err = client.GetUser("alice", defaultPassword)
+			Expect(err).ToNot(BeNil())
+		})
+		//data store
+
+	})
+
+	Describe("Testing on bandwidth",func(){
+		Specify("Bandwidth should be linear to adppeded content!", func(){
+			userlib.DebugMsg("Creating user Alice")
+			alice, err = client.InitUser("alice", defaultPassword)
+			Expect(err).To(BeNil())
+
+			userlib.DebugMsg("Alice creates a file")
+			err = alice.StoreFile(aliceFile, []byte(contentOne))
+			Expect(err).To(BeNil())
+
+			bw0 := userlib.DatastoreGetBandwidth()
+			
+
+			userlib.DebugMsg("Alice appending the first time")
+			err = alice.AppendToFile(aliceFile, []byte(contentTwo))
+			Expect(err).To(BeNil())
+			bw1 := userlib.DatastoreGetBandwidth()
+
+			userlib.DebugMsg("Alice appending the second time")
+			err = alice.AppendToFile(aliceFile, []byte(contentTwo))
+			Expect(err).To(BeNil())
+			bw2 := userlib.DatastoreGetBandwidth()
+
+			del_1 := bw1-bw0
+			del_2 := bw2-bw1
+			Expect(del_1 == del_2).To(BeTrue())
+		})
+	})
 })
