@@ -295,6 +295,20 @@ var _ = Describe("Client Tests", func() {
 		})
 		
 	})
+
+	Describe("Edge Test: Append to non-exist file", func(){
+		Specify("Edge Test: Testing empty username", func(){
+			userlib.DebugMsg("Initializing users Alice")
+			alice, err = client.InitUser("alice", defaultPassword)
+			Expect(err).To(BeNil())
+
+			err = alice.AppendToFile(aliceFile, []byte("garbage"))
+			Expect(err).ToNot(BeNil())
+			
+		})
+		
+	})
+
 	
 
 	Describe("Edge Test: Empty password test", func(){
@@ -794,6 +808,49 @@ var _ = Describe("Client Tests", func() {
 			Expect(err).ToNot(BeNil())
 		})
 	}) 
+
+
+	Describe("Revoke test", func(){
+		Specify("Recipient not revoked can still have access to the file", func(){
+			userlib.DebugMsg("Initializing users Alice, Bob")
+			alice, err = client.InitUser("alice", defaultPassword)
+			Expect(err).To(BeNil())
+			
+			bob, err = client.InitUser("bob", defaultPassword)
+			Expect(err).To(BeNil())
+
+			charles, err = client.InitUser("charles",defaultPassword)
+			Expect(err).To(BeNil())
+
+			userlib.DebugMsg("Alice create aliceFile.txt.")
+			err = alice.StoreFile(aliceFile, []byte(contentOne))
+			Expect(err).To(BeNil())
+
+			userlib.DebugMsg("Alice create invitation on aliceFile for Bob.")
+			alice_invite_bob, err := alice.CreateInvitation(aliceFile, "bob")
+			Expect(err).To(BeNil())
+
+			err = bob.AcceptInvitation("alice", alice_invite_bob, bobFile)
+			Expect(err).To(BeNil())
+
+			userlib.DebugMsg("Alice create invitation on aliceFile for Charles.")
+			alice_invite_charles, err := alice.CreateInvitation(aliceFile, "charles")
+			Expect(err).To(BeNil())
+			
+			userlib.DebugMsg("Make sure invitation for Charles is still valid")
+			err = charles.AcceptInvitation("alice", alice_invite_charles, charlesFile)
+			Expect(err).To(BeNil())
+
+			err = alice.RevokeAccess(aliceFile, "bob")
+			Expect(err).To(BeNil())
+
+			userlib.DebugMsg("Check Charles can still load the file")
+			data, err := charles.LoadFile(charlesFile)
+			Expect(err).To(BeNil())
+			Expect(data).To(Equal([]byte(contentOne)))
+		})
+
+	})
 
 
 
