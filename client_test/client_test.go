@@ -6,6 +6,9 @@ package client_test
 import (
 	// Some imports use an underscore to prevent the compiler from complaining
 	// about unused imports.
+
+	// "fmt"
+
 	_ "encoding/hex"
 	_ "errors"
 	_ "strconv"
@@ -575,4 +578,95 @@ var _ = Describe("Client Tests", func() {
 			Expect(del_1 == del_2).To(BeTrue())
 		})
 	})
+
+	/*
+		Some tampering stuff, including login, invitation, file tampering
+	*/
+
+	Describe("DataStore tampering", func() {
+		Specify("login tampering", func(){
+			userlib.DebugMsg("Initializing Alice, then tamper with DataStore")
+			alice, err = client.InitUser("alice", defaultPassword)
+			Expect(err).To(BeNil())
+			
+			ds := userlib.DatastoreGetMap()		
+			for index, _ := range(ds){
+				userlib.DatastoreSet(index, []byte("garbage"))
+			}
+			alice, err = client.GetUser("alice", defaultPassword)
+			Expect(err).ToNot(BeNil())
+		})
+
+		Specify("file tampering", func(){
+			userlib.DebugMsg("Initializing Alice")
+			alice, err = client.InitUser("alice", defaultPassword)
+			Expect(err).To(BeNil())
+
+			err = alice.StoreFile(aliceFile, []byte(contentOne))
+			Expect(err).To(BeNil())
+			
+
+			ds := userlib.DatastoreGetMap()	
+			for index, _ := range(ds){
+				ds[index] = []byte("garbage")
+			}
+			_, err = alice.LoadFile(aliceFile)
+			Expect(err).ToNot(BeNil())
+		})
+
+		Specify("file tampering", func(){
+			userlib.DebugMsg("Initializing Alice")
+			alice, err = client.InitUser("alice", defaultPassword)
+			Expect(err).To(BeNil())
+
+			err = alice.StoreFile(aliceFile, []byte(contentOne))
+			Expect(err).To(BeNil())
+			
+
+			ds := userlib.DatastoreGetMap()	
+			for index, _ := range(ds){
+				ds[index] = []byte("garbage")
+			}
+			_, err = alice.LoadFile(aliceFile)
+			Expect(err).ToNot(BeNil())
+		})
+
+		Specify("file tampering", func(){
+			userlib.DebugMsg("Initializing users Alice, Bob")
+			alice, err = client.InitUser("alice", defaultPassword)
+			Expect(err).To(BeNil())
+			
+			bob, err = client.InitUser("bob", defaultPassword)
+			Expect(err).To(BeNil())
+	
+			userlib.DebugMsg("Alice create aliceFile.txt.")
+			err = alice.StoreFile(aliceFile, []byte(contentOne))
+			Expect(err).To(BeNil())
+	
+			
+			userlib.DebugMsg("Alice create invitation on aliceFile for Bob.")
+			alice_invite_bob, err := alice.CreateInvitation(aliceFile, "bob")
+			Expect(err).To(BeNil())
+
+			ds := userlib.DatastoreGetMap()	
+			for index, _ := range(ds){
+				ds[index] = []byte("garbage")
+			}
+			
+			userlib.DebugMsg("Tamper with datastore.")
+			err = bob.AcceptInvitation("alice", alice_invite_bob, bobFile)
+			Expect(err).ToNot(BeNil())
+
+		})
+	}) 
+
+
+
+
+
+
+
+	/* 
+		Revoked recipient tampering
+	*/
 })
