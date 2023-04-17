@@ -239,6 +239,7 @@ type File struct {
 
 	// file access privillege control
 	AccessList map[string]RecipientTuple
+	InvitationList map[string]bool
 
 	// file block count used for efficient file append
 	FBC int
@@ -523,7 +524,14 @@ func HybridDec(SK userlib.PKEDecKey, verifyKey userlib.DSVerifyKey , stream []by
 		return nil, errors.New("Invitation has been tampered with!")
 	}
 
-	symKey, _ := userlib.PKEDec(SK, packet.SymKey)
+	symKey, err := userlib.PKEDec(SK, packet.SymKey)
+	if err != nil{
+		return nil, errors.New("Unable to decrypt!")
+	}
+
+	if (len(symKey) < 16){
+		return nil, errors.New("Unable to decrypt!")
+	}
 	ptext := userlib.SymDec(symKey, packet.Content)
 	return ptext, nil
 } 
@@ -651,6 +659,7 @@ func (userdataptr *User)CreateFile(filename string, size int) *File {
 
 		GKey: userlib.RandomBytes(16),
 		AccessList: make(map[string]RecipientTuple),
+		InvitationList: make(map[string]bool),
 		Size: size,
 		FBC: 1,
 	} 
@@ -967,6 +976,19 @@ func (userdataptr *User) CreateInvitation (filename string, recipientUsername st
 
 	index := fmt.Sprintf("Inv/%s-%s-%s", ptr.Username, recipientUsername, filename)
 
+	var handler File
+	metaStream, err := GuardedRetrieveDS(
+		metaEncKey, metaMacKey,
+		fmt.Sprintf("%v/%s/%s/Meta", prefix, ptr.Username, filename),
+	)
+
+	if err != nil{
+		return uuid.UUID{}, errors.New("Cannot upate current metablock when creating invitation")
+	}
+	json.Unmarshal(metaStream, &handler)
+
+	handler.InvitationList[recipientUsername] = true;
+
 	invStream, _ := json.Marshal(inv)
 
 	dsskEncKey, _ := ptr.GetKey("ENC-DSSK")
@@ -979,6 +1001,12 @@ func (userdataptr *User) CreateInvitation (filename string, recipientUsername st
 	if err != nil{
 		return uuid.UUID{}, err
 	}
+
+	GuardedStoreDS(
+		metaEncKey, metaMacKey,
+		fmt.Sprintf("%v/%s/%s/Meta", prefix, ptr.Username, filename),
+		handler,
+	)
 
 	var signKey userlib.DSSignKey
 	json.Unmarshal(stream, &signKey)
@@ -1035,11 +1063,11 @@ func (userdataptr *User) AcceptInvitation(senderUsername string, invitationPtr u
 	if err != nil{
 		return errors.New("Invalid Sender Name!")
 	}
-
-	if err != nil{
-		return err
-	}
+	
 	json.Unmarshal(ptext, &inv)
+	if inv.Recepient != ptr.Username{
+		return errors.New("Invalid Recipient!")
+	}
 
 
 	// using invitation index to create soft-linked file
@@ -1047,6 +1075,7 @@ func (userdataptr *User) AcceptInvitation(senderUsername string, invitationPtr u
 		Linked: true,
 		Link : SoftLink{inv.MetaBlockUUID, inv.MetaMacUUID, inv.MetaEncKey, inv.MetaMacKey},
 		AccessList: make(map[string]RecipientTuple),
+		InvitationList: make(map[string]bool),
 	}
 
 	_, _, _, err = __shareTreeTraverse(
@@ -1092,6 +1121,7 @@ func (userdataptr *User) AcceptInvitation(senderUsername string, invitationPtr u
 	
 	json.Unmarshal(stream, &handler)
 	handler.AccessList[ptr.Username] = recipientTuple
+	delete(handler.InvitationList, ptr.Username)
 
 	GuardedStoreDSUUID(
 		inv.MetaEncKey, inv.MetaMacKey,
@@ -1181,6 +1211,53 @@ func (userdataptr *User) RevokeAccess(filename string, recipientUsername string)
 			recipientTuple.MetaMacUUID,
 			recipientMeta,
 		)
+	}
+
+	// redistribute unaccepted invitations
+	for name, _ := range(handler.InvitationList){
+
+		newInv := Invitation{
+			MetaBlockUUID: GetUUID(
+				fmt.Sprintf("%v/%s/%s/Meta", newPrefix, ptr.Username, filename),
+			),
+			MetaMacUUID: GetUUID(
+				fmt.Sprintf("%v/%s/%s/Meta/MAC", newPrefix, ptr.Username, filename),
+			),
+			Recepient: name,
+			MetaEncKey: newMetaEncKey,
+			MetaMacKey: newMetaMacKey,
+		}
+
+		recipientPK, ok := userlib.KeystoreGet(name)
+		if !ok {
+			return errors.New("errors when redistribute unaccepted invitations")
+		}
+
+		index := fmt.Sprintf("Inv/%s-%s-%s", ptr.Username, name, filename)
+
+
+		invStream, _ := json.Marshal(newInv)
+
+		dsskEncKey, _ := ptr.GetKey("ENC-DSSK")
+		dsskMacKey, _ := ptr.GetKey("MAC-DSSK")
+
+		stream, err := GuardedRetrieveDS(
+			dsskEncKey, dsskMacKey,
+			fmt.Sprintf("%s/DSSK", ptr.Username),
+		)
+		if err != nil{
+			return errors.New("Errors when redistribute unaccepted invitations")
+		}
+
+		var signKey userlib.DSSignKey
+		json.Unmarshal(stream, &signKey)
+
+		ctext, err := HybridEnc(recipientPK, signKey, invStream)
+		if err != nil{
+			return errors.New("Error when redistribute unaccepted invitations")
+		}
+		StoreDS(index, ctext)
+
 	}
 
 	GuardedStoreDS(
