@@ -285,246 +285,327 @@ var _ = Describe("Client Tests", func() {
 		})
 	})
 
-	Describe("Edge Test: Empty username test", func(){
-		Specify("Edge Test: Testing empty username", func(){
-			userlib.DebugMsg("Initializing users Alice with empty username")
-			alice, err = client.InitUser(emptyString, defaultPassword)
-			Expect(err).ToNot(BeNil())
+	// Describe("Edge Test: Empty username test", func(){
+	// 	Specify("Edge Test: Testing empty username", func(){
+	// 		userlib.DebugMsg("Initializing users Alice with empty username")
+	// 		alice, err = client.InitUser(emptyString, defaultPassword)
+	// 		Expect(err).ToNot(BeNil())
 			
-		})
+	// 	})
 		
-	})
+	// })
 	
 
-	Describe("Edge Test: Empty password test", func(){
-		Specify("Edge Test: Testing empty password", func(){
-			userlib.DebugMsg("Initializing users Alice with default password")
-			alice, err = client.InitUser("alice",emptyString)
-			Expect(err).To(BeNil())
+	// Describe("Edge Test: Empty password test", func(){
+	// 	Specify("Edge Test: Testing empty password", func(){
+	// 		userlib.DebugMsg("Initializing users Alice with default password")
+	// 		alice, err = client.InitUser("alice",emptyString)
+	// 		Expect(err).To(BeNil())
 
-			userlib.DebugMsg("Login users Alice with empty password")
-			aliceLaptop, err = client.GetUser("alice", emptyString)
-			Expect(err).To(BeNil())
+	// 		userlib.DebugMsg("Login users Alice with empty password")
+	// 		aliceLaptop, err = client.GetUser("alice", emptyString)
+	// 		Expect(err).To(BeNil())
 			
-		})
-	})
+	// 	})
+	// })
 
-	Describe("Edge Test: Case sensitive test", func(){
-		Specify("Testing Bob != bob", func(){
-			userlib.DebugMsg("Initializing users Bob with default password")
-			bob, err = client.InitUser("Bob",defaultPassword)
-			Expect(err).To(BeNil())
+	// Describe("Edge Test: Case sensitive test", func(){
+	// 	Specify("Testing Bob != bob", func(){
+	// 		userlib.DebugMsg("Initializing users Bob with default password")
+	// 		bob, err = client.InitUser("Bob",defaultPassword)
+	// 		Expect(err).To(BeNil())
 
-			userlib.DebugMsg("Initializing users Bob with default password")
-			alice, err = client.InitUser("bob",defaultPassword)
-			Expect(err).To(BeNil())
+	// 		userlib.DebugMsg("Initializing users Bob with default password")
+	// 		alice, err = client.InitUser("bob",defaultPassword)
+	// 		Expect(err).To(BeNil())
 
-			userlib.DebugMsg("Login users bob with his password")
-			aliceLaptop, err = client.GetUser("bob", defaultPassword)
-			Expect(err).To(BeNil())
+	// 		userlib.DebugMsg("Login users bob with his password")
+	// 		aliceLaptop, err = client.GetUser("bob", defaultPassword)
+	// 		Expect(err).To(BeNil())
 			
-		})
-	})
+	// 	})
+	// })
 
-	Describe("Edge Test: Empty file name and content(store/ load/ append)", func(){
-		Specify("Should support empty file name", func(){
-			userlib.DebugMsg("Initializing users Bob with default password")
-			bob, err = client.InitUser("Bob",defaultPassword)
-			Expect(err).To(BeNil())
+	// Describe("Edge Test: Empty file name and content(store/ load/ append)", func(){
+	// 	Specify("Should support empty file name", func(){
+	// 		userlib.DebugMsg("Initializing users Bob with default password")
+	// 		bob, err = client.InitUser("Bob",defaultPassword)
+	// 		Expect(err).To(BeNil())
 
-			userlib.DebugMsg("Creating empty file with empty name")
-			err = bob.StoreFile("", []byte(""))
-			Expect(err).To(BeNil())
+	// 		userlib.DebugMsg("Creating empty file with empty name")
+	// 		err = bob.StoreFile("", []byte(""))
+	// 		Expect(err).To(BeNil())
 
-			userlib.DebugMsg("Loading file...")
-			data, err := bob.LoadFile("")
-			Expect(err).To(BeNil())
-			Expect(data).To(Equal([]byte("")))
+	// 		userlib.DebugMsg("Loading file...")
+	// 		data, err := bob.LoadFile("")
+	// 		Expect(err).To(BeNil())
+	// 		Expect(data).To(Equal([]byte("")))
 
-			userlib.DebugMsg("Appending empty content")
-			err = bob.AppendToFile("", []byte(""))
-			Expect(err).To(BeNil())
+	// 		userlib.DebugMsg("Appending empty content")
+	// 		err = bob.AppendToFile("", []byte(""))
+	// 		Expect(err).To(BeNil())
 			
-		})
-	})
+	// 	})
+	// })
 
 
-	Describe("Edge Test: Login with Incorrect password test", func(){
-		Specify("Edge Test: Testing empty username", func(){
-			userlib.DebugMsg("Initializing users Alice with default password")
-			alice, err = client.InitUser("alice", defaultPassword)
-			Expect(err).To(BeNil())
+	// Describe("Edge Test: Login with Incorrect password test", func(){
+	// 	Specify("Edge Test: Testing empty username", func(){
+	// 		userlib.DebugMsg("Initializing users Alice with default password")
+	// 		alice, err = client.InitUser("alice", defaultPassword)
+	// 		Expect(err).To(BeNil())
 
-			userlib.DebugMsg("Login users Alice with empty password")
-			aliceLaptop, err = client.GetUser("alice", "")
-			Expect(err).ToNot(BeNil())
+	// 		userlib.DebugMsg("Login users Alice with empty password")
+	// 		aliceLaptop, err = client.GetUser("alice", "")
+	// 		Expect(err).ToNot(BeNil())
 			
-		})
-	})
+	// 	})
+	// })
 
-	Describe("Edge Test: Login with non-existed account test", func(){
-		Specify("Edge Test: Testing empty username", func(){
-			// userlib.DebugMsg("Initializing users Alice with empty password")
-			// alice, err = client.InitUser("alice", defaultPassword)
-			// Expect(err).To(BeNil())
+	// Describe("Edge Test: Login with non-existed account test", func(){
+	// 	Specify("Edge Test: Testing empty username", func(){
+	// 		// userlib.DebugMsg("Initializing users Alice with empty password")
+	// 		// alice, err = client.InitUser("alice", defaultPassword)
+	// 		// Expect(err).To(BeNil())
 
-			userlib.DebugMsg("Login un-registed users Alice with password")
-			aliceLaptop, err = client.GetUser("alice", "")
-			Expect(err).ToNot(BeNil())
+	// 		userlib.DebugMsg("Login un-registed users Alice with password")
+	// 		aliceLaptop, err = client.GetUser("alice", "")
+	// 		Expect(err).ToNot(BeNil())
 			
-		})
-	})
+	// 	})
+	// })
 
-	Describe("Test: Outdated invitation test", func (){
-		Specify("Revoke invitation sharer, before invitation gets accepted", func(){
+	// Describe("Test: Outdated invitation test", func (){
+	// 	Specify("Revoke invitation sharer, before invitation gets accepted", func(){
 
-			userlib.DebugMsg("Initializing users Alice, Bob, and Charles.")
+	// 		userlib.DebugMsg("Initializing users Alice, Bob, and Charles.")
+	// 		alice, err = client.InitUser("alice", defaultPassword)
+	// 		Expect(err).To(BeNil())
+			
+	// 		bob, err = client.InitUser("bob", defaultPassword)
+	// 		Expect(err).To(BeNil())
+			
+	// 		charles, err = client.InitUser("charles", defaultPassword)
+	// 		Expect(err).To(BeNil())
+
+	// 		userlib.DebugMsg("Alice create aliceFile.txt.")
+	// 		err = alice.StoreFile(aliceFile, []byte(contentOne))
+	// 		Expect(err).To(BeNil())
+			
+	// 		userlib.DebugMsg("Alice create invitation on aliceFile for Bob, and Bob accepts it.")
+	// 		alice_invite_bob, err := alice.CreateInvitation(aliceFile, "bob")
+	// 		Expect(err).To(BeNil())
+
+	// 		err = bob.AcceptInvitation("alice", alice_invite_bob, bobFile)
+	// 		Expect(err).To(BeNil())
+			
+	// 		userlib.DebugMsg("Bob invites Charles.")
+	// 		bob_invite_charles, err := bob.CreateInvitation(bobFile, "charles")
+	// 		Expect(err).To(BeNil())
+			
+	// 		userlib.DebugMsg("Alice revokes Bob. Then invitation from Bob to Charles becomes outdated")
+
+	// 		err = alice.RevokeAccess(aliceFile, "bob")
+	// 		Expect(err).To(BeNil())
+
+	// 		err = charles.AcceptInvitation("bob", bob_invite_charles, charlesFile)
+	// 		Expect(err).ToNot(BeNil())
+
+	// 	})
+
+	
+	// })
+
+	// Describe("Unmatched invitation and senderName arg", func() {
+	// 	Specify("wrong senderName", func(){
+	// 		userlib.DebugMsg("Initializing users Alice, Bob, and Charles.")
+	// 		alice, err = client.InitUser("alice", defaultPassword)
+	// 		Expect(err).To(BeNil())
+			
+	// 		bob, err = client.InitUser("bob", defaultPassword)
+	// 		Expect(err).To(BeNil())
+			
+	// 		charles, err = client.InitUser("charles", defaultPassword)
+	// 		Expect(err).To(BeNil())
+
+	// 		userlib.DebugMsg("Alice create aliceFile.txt.")
+	// 		err = alice.StoreFile(aliceFile, []byte(contentOne))
+	// 		Expect(err).To(BeNil())
+			
+	// 		userlib.DebugMsg("Alice create invitation on aliceFile for Bob.")
+	// 		alice_invite_bob, err := alice.CreateInvitation(aliceFile, "bob")
+	// 		Expect(err).To(BeNil())
+			
+
+	// 		userlib.DebugMsg("Bob accepts it with incorrect senderName specified.")
+	// 		err = bob.AcceptInvitation("charles", alice_invite_bob, bobFile)
+	// 		Expect(err).ToNot(BeNil())		
+	// 	})
+	// }) 
+
+
+	// Describe("Duplicate filename under recipient's namespace", func() {
+	// 	Specify("duplicate filename when accept the invitation", func(){
+	// 		userlib.DebugMsg("Initializing users Alice, Bob")
+	// 		alice, err = client.InitUser("alice", defaultPassword)
+	// 		Expect(err).To(BeNil())
+			
+	// 		bob, err = client.InitUser("bob", defaultPassword)
+	// 		Expect(err).To(BeNil())
+
+	// 		userlib.DebugMsg("Alice create file.txt.")
+	// 		err = alice.StoreFile("file.txt", []byte(contentOne))
+	// 		Expect(err).To(BeNil())
+
+	// 		userlib.DebugMsg("Bob create file.txt.")
+	// 		err = bob.StoreFile("file.txt", []byte(contentOne))
+	// 		Expect(err).To(BeNil())
+			
+	// 		userlib.DebugMsg("Alice create invitation on aliceFile for Bob.")
+	// 		alice_invite_bob, err := alice.CreateInvitation("file.txt", "bob")
+	// 		Expect(err).To(BeNil())
+			
+	// 		userlib.DebugMsg("Bob accepts it with incorrect senderName specified.")
+	// 		err = bob.AcceptInvitation("alice", alice_invite_bob, "file.txt")
+	// 		Expect(err).ToNot(BeNil())		
+	// 	})
+	// }) 
+
+
+	// Describe("Revocation sanity check", func() {
+	// 	Specify("File revoke does not exist", func(){
+	// 		userlib.DebugMsg("Initializing users Alice, Bob")
+	// 		alice, err = client.InitUser("alice", defaultPassword)
+	// 		Expect(err).To(BeNil())
+			
+	// 		bob, err = client.InitUser("bob", defaultPassword)
+	// 		Expect(err).To(BeNil())
+
+	// 		userlib.DebugMsg("Alice create aliceFile.txt.")
+	// 		err = alice.StoreFile(aliceFile, []byte(contentOne))
+	// 		Expect(err).To(BeNil())
+
+			
+	// 		userlib.DebugMsg("Alice create invitation on aliceFile for Bob.")
+	// 		alice_invite_bob, err := alice.CreateInvitation(aliceFile, "bob")
+	// 		Expect(err).To(BeNil())
+			
+	// 		userlib.DebugMsg("Bob accepts it properly.")
+	// 		err = bob.AcceptInvitation("alice", alice_invite_bob, bobFile)
+	// 		Expect(err).To(BeNil())		
+
+	// 		userlib.DebugMsg("Alice tries to revoke a file which does not exist under her namespace.")
+	// 		err = alice.RevokeAccess("random.txt", "bob")
+	// 		Expect(err).ToNot(BeNil())		
+	// 	})
+
+	// 	Specify("Recipient to revoke does not exist", func(){
+	// 		userlib.DebugMsg("Initializing users Alice, Bob")
+	// 		alice, err = client.InitUser("alice", defaultPassword)
+	// 		Expect(err).To(BeNil())
+			
+	// 		bob, err = client.InitUser("bob", defaultPassword)
+	// 		Expect(err).To(BeNil())
+
+	// 		userlib.DebugMsg("Alice create aliceFile.txt.")
+	// 		err = alice.StoreFile(aliceFile, []byte(contentOne))
+	// 		Expect(err).To(BeNil())
+
+			
+	// 		userlib.DebugMsg("Alice create invitation on aliceFile for Bob.")
+	// 		alice_invite_bob, err := alice.CreateInvitation(aliceFile, "bob")
+	// 		Expect(err).To(BeNil())
+			
+	// 		userlib.DebugMsg("Bob accepts it properly.")
+	// 		err = bob.AcceptInvitation("alice", alice_invite_bob, bobFile)
+	// 		Expect(err).To(BeNil())		
+
+	// 		userlib.DebugMsg("Alice tries to revoke charles, who does not exist/have access to the file")
+	// 		err = alice.RevokeAccess(aliceFile, "charles")
+	// 		Expect(err).ToNot(BeNil())		
+	// 	})
+	// }) 
+
+
+	Describe("Edge case: unaccepted invitation", func(){
+		Specify("Unaccepted invitation is still valid after revocation", func(){
+			userlib.DebugMsg("Initializing users Alice, Bob")
 			alice, err = client.InitUser("alice", defaultPassword)
 			Expect(err).To(BeNil())
 			
 			bob, err = client.InitUser("bob", defaultPassword)
 			Expect(err).To(BeNil())
-			
-			charles, err = client.InitUser("charles", defaultPassword)
+
+			charles, err = client.InitUser("charles",defaultPassword)
 			Expect(err).To(BeNil())
 
 			userlib.DebugMsg("Alice create aliceFile.txt.")
 			err = alice.StoreFile(aliceFile, []byte(contentOne))
 			Expect(err).To(BeNil())
-			
-			userlib.DebugMsg("Alice create invitation on aliceFile for Bob, and Bob accepts it.")
-			alice_invite_bob, err := alice.CreateInvitation(aliceFile, "bob")
+
+	
+			userlib.DebugMsg("Alice create invitation on aliceFile for Bob.")
+			_, err := alice.CreateInvitation(aliceFile, "bob")
 			Expect(err).To(BeNil())
 
-			err = bob.AcceptInvitation("alice", alice_invite_bob, bobFile)
+			userlib.DebugMsg("Alice create invitation on aliceFile for Charles.")
+			alice_invite_charles, err := alice.CreateInvitation(aliceFile, "charles")
 			Expect(err).To(BeNil())
 			
-			userlib.DebugMsg("Bob invites Charles.")
-			bob_invite_charles, err := bob.CreateInvitation(bobFile, "charles")
-			Expect(err).To(BeNil())
-			
-			userlib.DebugMsg("Alice revokes Bob. Then invitation from Bob to Charles becomes outdated")
-
+			userlib.DebugMsg("Alice revoke Bob's access before Bob accepts the invitation")
 			err = alice.RevokeAccess(aliceFile, "bob")
 			Expect(err).To(BeNil())
 
-			err = charles.AcceptInvitation("bob", bob_invite_charles, charlesFile)
-			Expect(err).ToNot(BeNil())
+			userlib.DebugMsg("Make sure invitation for Charles is still valid")
+			err = charles.AcceptInvitation("alice", alice_invite_charles, charlesFile)
+			Expect(err).To(BeNil())
 
+			userlib.DebugMsg("Check Charles can still load the file")
+			data, err := charles.LoadFile(charlesFile)
+			Expect(err).To(BeNil())
+			Expect(data).To(Equal([]byte(contentOne)))
 		})
+	})
+	
+	Describe("Edge case: unaccepted invitation", func(){
+		Specify("Unaccepted invitation is still valid after revocation", func(){
+			userlib.DebugMsg("Initializing users Alice, Bob")
+			alice, err = client.InitUser("alice", defaultPassword)
+			Expect(err).To(BeNil())
+			
+			bob, err = client.InitUser("bob", defaultPassword)
+			Expect(err).To(BeNil())
+
+			charles, err = client.InitUser("charles",defaultPassword)
+			Expect(err).To(BeNil())
+
+			userlib.DebugMsg("Alice create aliceFile.txt.")
+			err = alice.StoreFile(aliceFile, []byte(contentOne))
+			Expect(err).To(BeNil())
 
 	
+			userlib.DebugMsg("Alice create invitation on aliceFile for Bob.")
+			_, err := alice.CreateInvitation(aliceFile, "bob")
+			Expect(err).To(BeNil())
+
+			userlib.DebugMsg("Alice create invitation on aliceFile for Charles.")
+			alice_invite_charles, err := alice.CreateInvitation(aliceFile, "charles")
+			Expect(err).To(BeNil())
+			
+			userlib.DebugMsg("Alice revoke Bob's access before Bob accepts the invitation")
+			err = alice.RevokeAccess(aliceFile, "bob")
+			Expect(err).To(BeNil())
+
+			userlib.DebugMsg("Make sure invitation for Charles is still valid")
+			err = charles.AcceptInvitation("alice", alice_invite_charles, charlesFile)
+			Expect(err).To(BeNil())
+
+			userlib.DebugMsg("Check Charles can still load the file")
+			data, err := charles.LoadFile(charlesFile)
+			Expect(err).To(BeNil())
+			Expect(data).To(Equal([]byte(contentOne)))
+		})
 	})
-
-	Describe("Unmatched invitation and senderName arg", func() {
-		Specify("wrong senderName", func(){
-			userlib.DebugMsg("Initializing users Alice, Bob, and Charles.")
-			alice, err = client.InitUser("alice", defaultPassword)
-			Expect(err).To(BeNil())
-			
-			bob, err = client.InitUser("bob", defaultPassword)
-			Expect(err).To(BeNil())
-			
-			charles, err = client.InitUser("charles", defaultPassword)
-			Expect(err).To(BeNil())
-
-			userlib.DebugMsg("Alice create aliceFile.txt.")
-			err = alice.StoreFile(aliceFile, []byte(contentOne))
-			Expect(err).To(BeNil())
-			
-			userlib.DebugMsg("Alice create invitation on aliceFile for Bob.")
-			alice_invite_bob, err := alice.CreateInvitation(aliceFile, "bob")
-			Expect(err).To(BeNil())
-			
-
-			userlib.DebugMsg("Bob accepts it with incorrect senderName specified.")
-			err = bob.AcceptInvitation("charles", alice_invite_bob, bobFile)
-			Expect(err).ToNot(BeNil())		
-		})
-	}) 
-
-
-	Describe("Duplicate filename under recipient's namespace", func() {
-		Specify("duplicate filename when accept the invitation", func(){
-			userlib.DebugMsg("Initializing users Alice, Bob")
-			alice, err = client.InitUser("alice", defaultPassword)
-			Expect(err).To(BeNil())
-			
-			bob, err = client.InitUser("bob", defaultPassword)
-			Expect(err).To(BeNil())
-
-			userlib.DebugMsg("Alice create file.txt.")
-			err = alice.StoreFile("file.txt", []byte(contentOne))
-			Expect(err).To(BeNil())
-
-			userlib.DebugMsg("Bob create file.txt.")
-			err = bob.StoreFile("file.txt", []byte(contentOne))
-			Expect(err).To(BeNil())
-			
-			userlib.DebugMsg("Alice create invitation on aliceFile for Bob.")
-			alice_invite_bob, err := alice.CreateInvitation("file.txt", "bob")
-			Expect(err).To(BeNil())
-			
-			userlib.DebugMsg("Bob accepts it with incorrect senderName specified.")
-			err = bob.AcceptInvitation("alice", alice_invite_bob, "file.txt")
-			Expect(err).ToNot(BeNil())		
-		})
-	}) 
-
-
-	Describe("Revocation sanity check", func() {
-		Specify("File revoke does not exist", func(){
-			userlib.DebugMsg("Initializing users Alice, Bob")
-			alice, err = client.InitUser("alice", defaultPassword)
-			Expect(err).To(BeNil())
-			
-			bob, err = client.InitUser("bob", defaultPassword)
-			Expect(err).To(BeNil())
-
-			userlib.DebugMsg("Alice create aliceFile.txt.")
-			err = alice.StoreFile(aliceFile, []byte(contentOne))
-			Expect(err).To(BeNil())
-
-			
-			userlib.DebugMsg("Alice create invitation on aliceFile for Bob.")
-			alice_invite_bob, err := alice.CreateInvitation(aliceFile, "bob")
-			Expect(err).To(BeNil())
-			
-			userlib.DebugMsg("Bob accepts it properly.")
-			err = bob.AcceptInvitation("alice", alice_invite_bob, bobFile)
-			Expect(err).To(BeNil())		
-
-			userlib.DebugMsg("Alice tries to revoke a file which does not exist under her namespace.")
-			err = alice.RevokeAccess("random.txt", "bob")
-			Expect(err).ToNot(BeNil())		
-		})
-
-		Specify("Recipient to revoke does not exist", func(){
-			userlib.DebugMsg("Initializing users Alice, Bob")
-			alice, err = client.InitUser("alice", defaultPassword)
-			Expect(err).To(BeNil())
-			
-			bob, err = client.InitUser("bob", defaultPassword)
-			Expect(err).To(BeNil())
-
-			userlib.DebugMsg("Alice create aliceFile.txt.")
-			err = alice.StoreFile(aliceFile, []byte(contentOne))
-			Expect(err).To(BeNil())
-
-			
-			userlib.DebugMsg("Alice create invitation on aliceFile for Bob.")
-			alice_invite_bob, err := alice.CreateInvitation(aliceFile, "bob")
-			Expect(err).To(BeNil())
-			
-			userlib.DebugMsg("Bob accepts it properly.")
-			err = bob.AcceptInvitation("alice", alice_invite_bob, bobFile)
-			Expect(err).To(BeNil())		
-
-			userlib.DebugMsg("Alice tries to revoke charles, who does not exist/have access to the file")
-			err = alice.RevokeAccess(aliceFile, "charles")
-			Expect(err).ToNot(BeNil())		
-		})
-	}) 
 
 	Describe("Testing on tampering behaviors:", func(){
 		//key store
@@ -612,51 +693,6 @@ var _ = Describe("Client Tests", func() {
 			}
 			_, err = alice.LoadFile(aliceFile)
 			Expect(err).ToNot(BeNil())
-		})
-
-		Specify("file tampering", func(){
-			userlib.DebugMsg("Initializing Alice")
-			alice, err = client.InitUser("alice", defaultPassword)
-			Expect(err).To(BeNil())
-
-			err = alice.StoreFile(aliceFile, []byte(contentOne))
-			Expect(err).To(BeNil())
-			
-
-			ds := userlib.DatastoreGetMap()	
-			for index, _ := range(ds){
-				ds[index] = []byte("garbage")
-			}
-			_, err = alice.LoadFile(aliceFile)
-			Expect(err).ToNot(BeNil())
-		})
-
-		Specify("file tampering", func(){
-			userlib.DebugMsg("Initializing users Alice, Bob")
-			alice, err = client.InitUser("alice", defaultPassword)
-			Expect(err).To(BeNil())
-			
-			bob, err = client.InitUser("bob", defaultPassword)
-			Expect(err).To(BeNil())
-	
-			userlib.DebugMsg("Alice create aliceFile.txt.")
-			err = alice.StoreFile(aliceFile, []byte(contentOne))
-			Expect(err).To(BeNil())
-	
-			
-			userlib.DebugMsg("Alice create invitation on aliceFile for Bob.")
-			alice_invite_bob, err := alice.CreateInvitation(aliceFile, "bob")
-			Expect(err).To(BeNil())
-
-			ds := userlib.DatastoreGetMap()	
-			for index, _ := range(ds){
-				ds[index] = []byte("garbage")
-			}
-			
-			userlib.DebugMsg("Tamper with datastore.")
-			err = bob.AcceptInvitation("alice", alice_invite_bob, bobFile)
-			Expect(err).ToNot(BeNil())
-
 		})
 	}) 
 

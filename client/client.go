@@ -1063,7 +1063,7 @@ func (userdataptr *User) AcceptInvitation(senderUsername string, invitationPtr u
 	if err != nil{
 		return errors.New("Invalid Sender Name!")
 	}
-	
+
 	json.Unmarshal(ptext, &inv)
 	if inv.Recepient != ptr.Username{
 		return errors.New("Invalid Recipient!")
@@ -1139,7 +1139,10 @@ func (userdataptr *User) RevokeAccess(filename string, recipientUsername string)
 	if err != nil{
 		return errors.New("File to revoke does not exist!")
 	}
-	if _, ok := handler.AccessList[recipientUsername]; !ok{
+
+	_, accessOK := handler.AccessList[recipientUsername]
+	_, invOK := handler.InvitationList[recipientUsername]	
+	if !accessOK && !invOK{
 		return errors.New("Recipent to revoke does not exist!")
 	}
 	
@@ -1185,7 +1188,12 @@ func (userdataptr *User) RevokeAccess(filename string, recipientUsername string)
 		handler.Store(i, blockContent)
 	}
 
-	delete(handler.AccessList, recipientUsername)
+	if accessOK{
+		delete(handler.AccessList, recipientUsername)
+	}
+	if invOK{
+		delete(handler.InvitationList, recipientUsername)
+	}
 
 	// distribute new metaKeys
 	for _, recipientTuple := range handler.AccessList{
