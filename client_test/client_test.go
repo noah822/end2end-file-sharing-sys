@@ -714,7 +714,9 @@ var _ = Describe("Client Tests", func() {
 
 			del_1 := bw1-bw0
 			del_2 := bw2-bw1
+			del_3 := bw2-bw0
 			Expect(del_1 == del_2).To(BeTrue())
+			Expect(del_1*2 == del_3).To(BeTrue())
 		})
 		Specify("Appending to file should not take too much bandwith", func() {
 			userlib.DebugMsg("Creating user Bob ")
