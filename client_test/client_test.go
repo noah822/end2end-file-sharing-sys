@@ -648,7 +648,7 @@ var _ = Describe("Client Tests", func() {
 			alice_invite_charles, err := alice.CreateInvitation(aliceFile, "charles")
 			Expect(err).To(BeNil())
 			
-			userlib.DebugMsg("Alice revoke Bob's access before Bob accepts the invitation")
+			userlib.DebugMsg("Alice revoke Bob's access after Bob accepts the invitation")
 			err = alice.RevokeAccess(aliceFile, "bob")
 			Expect(err).To(BeNil())
 
@@ -717,6 +717,7 @@ var _ = Describe("Client Tests", func() {
 			del_3 := bw2-bw0
 			Expect(del_1 == del_2).To(BeTrue())
 			Expect(del_1*2 == del_3).To(BeTrue())
+
 		})
 		Specify("Appending to file should not take too much bandwith", func() {
 			userlib.DebugMsg("Creating user Bob ")
@@ -770,6 +771,8 @@ var _ = Describe("Client Tests", func() {
 			Expect(bandwith0 > bandwith1).To(BeTrue())
 
 		})
+
+		
 
 	})
 
@@ -862,6 +865,8 @@ var _ = Describe("Client Tests", func() {
 			err = bob.AcceptInvitation("alice", alice_invite_bob, bobFile)
 			Expect(err).ToNot(BeNil())
 		})
+
+		
 	}) 
 
 
@@ -905,11 +910,124 @@ var _ = Describe("Client Tests", func() {
 			Expect(data).To(Equal([]byte(contentOne)))
 		})
 
+		Describe("KS length tests",func(){
+			Specify("Legngth of KS should not depend on the number of files",func(){
+				userlib.DebugMsg("Creating user Alice ")
+				alice, err = client.InitUser("alice", defaultPassword)
+				Expect(err).To(BeNil())
+
+				// userlib.DebugMsg("Mallery tries to change public key of alice")
+				// malleryPK, _, err := userlib.PKEKeyGen()
+				// Expect(err).To(BeNil())
+				keystore_pre := userlib.KeystoreGetMap()
+				userlib.DebugMsg("Alice creates 2 files ")
+				err = alice.StoreFile(aliceFile, []byte(contentOne))
+				Expect(err).To(BeNil())
+				err = alice.StoreFile(bobFile, []byte(contentOne))
+				Expect(err).To(BeNil())
+				keystore_post := userlib.KeystoreGetMap()
+				Expect(keystore_pre).To(Equal(keystore_post))
+			})
+
+			Specify("Legngth of KS should not depend on the length of file",func(){
+
+				const CONTENT = `
+				2023/04/17 22:00:18 22:00:18.96804 Alice revokes Bob. Then invitation from Bob to Charles becomes outdated
+				2023/04/17 22:00:21 22:00:21.60598 Bob accepts it with incorrect senderName specified.
+				•2023/04/17 22:00:21 22:00:21.68896 Initializing users Alice, Bob
+				2023/04/17 22:00:22 22:00:22.95944 Alice create file.txt.
+				2023/04/17 22:00:23 22:00:23.20670 Bob create file.txt.
+				2023/04/17 22:00:23 22:00:23.45537 Alice create invitation on aliceFile for Bob.
+				2023/04/17 22:00:23 22:00:23.69212 Bob accepts it with incorrect senderName specified.
+				•2023/04/17 22:00:23 22:00:23.78208 Initializing users Alice, Bob
+				2023/04/17 22:00:25 22:00:25.23358 Alice create aliceFile.txt.
+				2023/04/17 22:00:25 22:00:25.45939 Alice create invitation on aliceFile for Bob.
+				2023/04/17 22:00:25 22:00:25.72305 Bob accepts it properly.
+				2023/04/17 22:00:25 22:00:25.98059 Alice tries to revoke a file which does not exist under her namespace.
+				•2023/04/17 22:00:26 22:00:26.02521 Initializing users Alice, Bob
+				2023/04/17 22:00:27 22:00:27.32085 Alice create aliceFile.txt.
+				2023/04/17 22:00:27 22:00:27.51953 Alice create invitation on aliceFile for Bob.
+				2023/04/17 22:00:27 22:00:27.72777 Bob accepts it properly.
+				2023/04/17 22:00:27 22:00:27.99760 Alice tries to revoke charles, who does not exist/have access to the file
+				•2023/04/17 22:00:28 22:00:28.08049 Initializing users Alice, Bob
+				2023/04/17 22:00:29 22:00:29.87911 Alice create aliceFile.txt.
+				2023/04/17 22:00:30 22:00:30.07805 Alice create invitation on aliceFile for Bob.
+				2023/04/17 22:00:30 22:00:30.29108 Alice create invitation on aliceFile for Charles.
+				2023/04/17 22:00:30 22:00:30.49796 Alice revoke Bob's access before Bob accepts the invitation
+				2023/04/17 22:00:30 22:00:30.82821 Make sure invitation for Charles is still valid
+				2023/04/17 22:00:31 22:00:31.07241 Check Charles can still load the file
+				•2023/04/17 22:00:31 22:00:31.15463 Initializing users Alice, Bob
+				2023/04/17 22:00:32 22:00:32.84739 Alice create aliceFile.txt.
+				`
+				userlib.DebugMsg("Creating user Alice ")
+				alice, err = client.InitUser("alice", defaultPassword)
+				Expect(err).To(BeNil())
+
+				// userlib.DebugMsg("Mallery tries to change public key of alice")
+				// malleryPK, _, err := userlib.PKEKeyGen()
+				// Expect(err).To(BeNil())
+			
+				userlib.DebugMsg("Alice creates 1 files ")
+				err = alice.StoreFile(aliceFile, []byte(contentOne))
+				Expect(err).To(BeNil())
+				keystore_pre := userlib.KeystoreGetMap()
+				userlib.DebugMsg("Alice appends a lot of contents")
+				err = alice.StoreFile(aliceFile, []byte(CONTENT))
+				Expect(err).To(BeNil())
+				keystore_post := userlib.KeystoreGetMap()
+				Expect(keystore_pre).To(Equal(keystore_post))
+			})
+
+			Specify("Legngth of KS should not depend on the number of users being invited",func(){
+				userlib.DebugMsg("Initializing users Alice, Bob")
+				alice, err = client.InitUser("alice", defaultPassword)
+				Expect(err).To(BeNil())
+				
+				bob, err = client.InitUser("bob", defaultPassword)
+				Expect(err).To(BeNil())
+
+				charles, err = client.InitUser("charles",defaultPassword)
+				Expect(err).To(BeNil())
+
+				userlib.DebugMsg("Alice create aliceFile.txt.")
+				err = alice.StoreFile(aliceFile, []byte(contentOne))
+				Expect(err).To(BeNil())
+
+				keystore_pre := userlib.KeystoreGetMap()
+				userlib.DebugMsg("Alice create invitation on aliceFile for Bob.")
+				alice_invite_bob, err := alice.CreateInvitation(aliceFile, "bob")
+				Expect(err).To(BeNil())
+
+				err = bob.AcceptInvitation("alice", alice_invite_bob, bobFile)
+				Expect(err).To(BeNil())
+
+				userlib.DebugMsg("Alice create invitation on aliceFile for Charles.")
+				alice_invite_charles, err := alice.CreateInvitation(aliceFile, "charles")
+				Expect(err).To(BeNil())
+
+				err = charles.AcceptInvitation("alice", alice_invite_charles, charlesFile)
+				Expect(err).To(BeNil())
+				
+
+				// userlib.DebugMsg("Mallery tries to change public key of alice")
+				// malleryPK, _, err := userlib.PKEKeyGen()
+				// Expect(err).To(BeNil())
+				// keystore_pre := userlib.KeystoreGetMap()
+				// userlib.DebugMsg("Alice creates 2 files ")
+				// err = alice.StoreFile(aliceFile, []byte(contentOne))
+				// Expect(err).To(BeNil())
+				// err = alice.StoreFile(bobFile, []byte(contentOne))
+				// Expect(err).To(BeNil())
+				keystore_post := userlib.KeystoreGetMap()
+				Expect(keystore_pre).To(Equal(keystore_post))
+			})
+			
+		})
 	})
 
 
 
-
+	
 
 
 
