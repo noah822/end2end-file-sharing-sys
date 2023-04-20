@@ -546,7 +546,8 @@ func SignUp(username string, password string) (*User, error){
 
 	var err error
 	salt := userlib.RandomBytes(32)
-	passwordHash := userlib.Hash([]byte(username + password))
+	var toHash []byte = append([]byte(username + password), salt...)
+	passwordHash := userlib.Hash(toHash)
 
 	PK, SK, _ := userlib.PKEKeyGen()
 	SignKey, VerifyKey, _ := userlib.DSKeyGen();
@@ -627,7 +628,9 @@ func LoginCheck(username string, password string) (*User, error) {
 	passwordHash := userlib.SymDec(decKey, loginSlot.EncPasswordHash)
 
 
-	hash := userlib.Hash([]byte(username + password))
+	var toHash []byte = append([]byte(username + password), loginSlot.Salt...)
+	
+	hash := userlib.Hash(toHash)
 	if (ByteCompare(passwordHash, hash)){
 		userdataptr := &User {
 			Username: username,
